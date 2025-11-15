@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, Mail, Lock, User } from 'lucide-react';
+import { Video, Mail, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-export default function Signup() {
+export default function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    firstName: '',
-    lastName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,75 +24,46 @@ export default function Signup() {
     e.preventDefault();
     setError('');
 
-    // Basic validation
-    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (!formData.email || !formData.password) {
+      setError('Please enter both email and password');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Sign up with Supabase
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-          },
-        },
       });
 
-      if (signUpError) {
-        console.error('Supabase signup error:', signUpError);
-        console.error('Error details:', {
-          message: signUpError.message,
-          status: signUpError.status,
-          name: signUpError.name,
-        });
-        // Show more detailed error message
-        let errorMessage = signUpError.message || 'Failed to create account. Please try again.';
-        if (signUpError.status === 400) {
-          errorMessage = 'Invalid email or password. Please check your input.';
-        } else if (signUpError.status === 422) {
-          errorMessage = 'Email already exists or invalid format.';
-        } else if (signUpError.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
-        }
-        setError(errorMessage);
+      if (signInError) {
+        setError(signInError.message || 'Failed to sign in. Please check your credentials.');
         setIsLoading(false);
         return;
       }
 
       if (!authData.user) {
-        setError('Failed to create account. Please try again.');
+        setError('Failed to sign in. Please try again.');
         setIsLoading(false);
         return;
       }
 
-      // Store user data in localStorage for easy access
+      // Store user data in localStorage
       const userData = {
         email: authData.user.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        firstName: authData.user.user_metadata?.first_name || '',
+        lastName: authData.user.user_metadata?.last_name || '',
         userId: authData.user.id,
-        isAuthenticated: !!authData.session, // true if session exists, false if email confirmation needed
-        needsEmailConfirmation: !authData.session,
+        isAuthenticated: true,
       };
       localStorage.setItem('user', JSON.stringify(userData));
 
-      // Redirect to onboarding (even if email confirmation is needed)
+      // Redirect to onboarding
       navigate('/onboarding');
     } catch (err: any) {
-      console.error('Signup error:', err);
-      setError(err.message || 'Failed to create account. Please try again.');
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to sign in. Please try again.');
       setIsLoading(false);
     }
   };
@@ -111,10 +80,10 @@ export default function Signup() {
             </div>
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Create your account
+            Sign in to your account
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Start automating your Zoom follow-ups today
+            Continue automating your Zoom follow-ups
           </p>
         </div>
 
@@ -127,50 +96,6 @@ export default function Signup() {
           )}
 
           <div className="space-y-4">
-            {/* First Name */}
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="John"
-                />
-              </div>
-            </div>
-
-            {/* Last Name */}
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
-
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -207,7 +132,7 @@ export default function Signup() {
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   required
                   value={formData.password}
                   onChange={handleChange}
@@ -215,7 +140,6 @@ export default function Signup() {
                   placeholder="••••••••"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
             </div>
           </div>
 
@@ -225,18 +149,18 @@ export default function Signup() {
               disabled={isLoading}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 
           <div className="text-center text-sm">
-            <span className="text-gray-600">Already have an account? </span>
+            <span className="text-gray-600">Don't have an account? </span>
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/signup')}
               className="font-medium text-blue-600 hover:text-blue-500"
             >
-              Log in
+              Sign up
             </button>
           </div>
         </form>

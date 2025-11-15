@@ -23,7 +23,12 @@ export default function ZoomFollowUpLanding() {
           </nav>
           
           <div className="flex items-center gap-4">
-            <button className="text-gray-700 hover:text-gray-900">Log in</button>
+            <button 
+              onClick={() => navigate('/login')}
+              className="text-gray-700 hover:text-gray-900"
+            >
+              Log in
+            </button>
             <button 
               onClick={() => navigate('/signup')}
               className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
