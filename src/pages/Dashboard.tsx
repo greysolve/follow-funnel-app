@@ -1,17 +1,318 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, CreditCard, CheckCircle, X } from 'lucide-react';
+import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, RefreshCw, Eye, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [selectedMeeting, setSelectedMeeting] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'attendees' | 'noShows'>('attendees');
+  const [attendeesEmail, setAttendeesEmail] = useState<string>('');
+  const [noShowsEmail, setNoShowsEmail] = useState<string>('');
+  const [connections, setConnections] = useState<any[]>([]);
+  const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [currentTemplate, setCurrentTemplate] = useState<any>(null);
+  const [assignment, setAssignment] = useState<any>(null);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [emailSubject, setEmailSubject] = useState<string>('');
+  const [templateName, setTemplateName] = useState<string>('');
+  const [saveMessage, setSaveMessage] = useState<string>('');
+  const [saveError, setSaveError] = useState<string>('');
+  const [registrants, setRegistrants] = useState<any[]>([]);
+  const [isLoadingRegistrants, setIsLoadingRegistrants] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedRegistrantForPreview, setSelectedRegistrantForPreview] = useState<any>(null);
+  const [delayAmount, setDelayAmount] = useState<number>(5);
+  const [delayUnit, setDelayUnit] = useState<string>('minutes');
+  const [isCreatingPackage, setIsCreatingPackage] = useState(false);
+  const quillRef = useRef<any>(null);
+
+  // Variable definitions
+  const variables = [
+    { label: '{{First Name}}', value: '{{first_name}}' },
+    { label: '{{Last Name}}', value: '{{last_name}}' },
+    { label: '{{Email}}', value: '{{email}}' },
+    { label: '{{Company}}', value: '{{org}}' },
+    { label: '{{Job Title}}', value: '{{job_title}}' },
+    { label: '{{City}}', value: '{{city}}' },
+    { label: '{{Country}}', value: '{{country}}' },
+    { label: '{{Recording Link}}', value: '{{recording_link}}' },
+    { label: '{{Meeting Title}}', value: '{{meeting_title}}' },
+  ];
+
+  const handleVariableDragStart = (e: React.DragEvent, variable: string) => {
+    e.dataTransfer.setData('text/plain', variable);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleEditorDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const variable = e.dataTransfer.getData('text/plain');
+    if (variable && quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const range = quill.getSelection(true);
+      quill.insertText(range.index, variable, 'user');
+      quill.setSelection(range.index + variable.length);
+    }
+  };
+
+  const handleVariableClick = (variable: string) => {
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const range = quill.getSelection(true);
+      quill.insertText(range.index, variable, 'user');
+      quill.setSelection(range.index + variable.length);
+    }
+  };
+
+  const stripColorStyles = (html: string): string => {
+    // Remove color and background-color styles from HTML
+    // This ensures saved emails don't have unwanted color styling
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const allElements = doc.querySelectorAll('*');
+    
+    allElements.forEach((el) => {
+      if (el instanceof HTMLElement) {
+        el.style.color = '';
+        el.style.backgroundColor = '';
+        // Remove color from style attribute if it exists
+        if (el.getAttribute('style')) {
+          const style = el.getAttribute('style') || '';
+          const newStyle = style
+            .split(';')
+            .filter((s) => !s.trim().startsWith('color') && !s.trim().startsWith('background-color'))
+            .join(';');
+          if (newStyle.trim()) {
+            el.setAttribute('style', newStyle);
+          } else {
+            el.removeAttribute('style');
+          }
+        }
+      }
+    });
+    
+    return doc.body.innerHTML;
+  };
+
+  const substituteVariables = (content: string, registrant: any, meetingTopic?: string): string => {
+    if (!registrant) return content;
+    
+    // Get the selected meeting to access meeting topic
+    const meeting = meetings.find((m: any) => (m.id || m.uuid) === selectedMeeting);
+    const topic = meetingTopic || meeting?.topic || '';
+    
+    // Map of variable placeholders to registrant fields or meeting data
+    const variableMap: { [key: string]: { field?: string, label: string, value?: string } } = {
+      '{{first_name}}': { field: 'first_name', label: 'first_name' },
+      '{{last_name}}': { field: 'last_name', label: 'last_name' },
+      '{{email}}': { field: 'email', label: 'email' },
+      '{{org}}': { field: 'org', label: 'org' },
+      '{{job_title}}': { field: 'job_title', label: 'job_title' },
+      '{{city}}': { field: 'city', label: 'city' },
+      '{{country}}': { field: 'country', label: 'country' },
+      '{{recording_link}}': { field: 'recording_link', label: 'recording_link' },
+      '{{meeting_title}}': { label: 'meeting_title', value: topic },
+    };
+
+    let substitutedContent = content;
+    Object.keys(variableMap).forEach((key) => {
+      const regex = new RegExp(key.replace(/[{}]/g, '\\$&'), 'g');
+      let value: string | undefined;
+      
+      if (variableMap[key].value !== undefined) {
+        // Meeting-specific variable
+        value = variableMap[key].value;
+      } else if (variableMap[key].field) {
+        // Registrant field
+        value = registrant[variableMap[key].field!];
+      }
+      
+      if (value && value.trim() !== '') {
+        // Value exists, substitute it
+        substitutedContent = substitutedContent.replace(regex, value);
+      } else {
+        // Value is missing, show red placeholder
+        const missingPlaceholder = `<span style="color: red; font-weight: bold;">{{${variableMap[key].label}_missing}}</span>`;
+        substitutedContent = substitutedContent.replace(regex, missingPlaceholder);
+      }
+    });
+
+    return substitutedContent;
+  };
+
+  const handlePreviewClick = () => {
+    if (!selectedMeeting) return;
+    setIsPreviewOpen(true);
+  };
+
+  const handleRegistrantSelect = (registrant: any) => {
+    setSelectedRegistrantForPreview(registrant);
+  };
+
+  const getPreviewContent = (): string => {
+    if (!selectedRegistrantForPreview) return '';
+    const currentContent = getCurrentEmailContent();
+    return substituteVariables(currentContent, selectedRegistrantForPreview);
+  };
+
+  const getPreviewSubject = (): string => {
+    if (!selectedRegistrantForPreview) return emailSubject;
+    return substituteVariables(emailSubject, selectedRegistrantForPreview);
+  };
+
+  const calculateDelayMinutes = (amount: number, unit: string): number => {
+    switch (unit) {
+      case 'hours':
+        return amount * 60;
+      case 'days':
+        return amount * 24 * 60;
+      case 'minutes':
+      default:
+        return amount;
+    }
+  };
+
+  const calculateMeetingEndTime = (meeting: any): string => {
+    if (!meeting.start_time || !meeting.duration) {
+      throw new Error('Meeting missing start_time or duration');
+    }
+    const startTime = new Date(meeting.start_time);
+    const durationMinutes = meeting.duration;
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+    return endTime.toISOString();
+  };
+
+  const handleCreateSendingPackage = async () => {
+    if (!selectedMeeting || !userData?.userId || !selectedTemplateId) {
+      setSaveError('Please select a meeting and template first');
+      return;
+    }
+
+    if (registrants.length === 0) {
+      setSaveError('No registrants found for this meeting');
+      return;
+    }
+
+    setIsCreatingPackage(true);
+    setSaveError('');
+
+    try {
+      console.log('Looking for meeting:', selectedMeeting);
+      console.log('Available meetings:', meetings);
+      
+      // Find the selected meeting object
+      const meeting = meetings.find((m: any) => {
+        const meetingId = m.id || m.uuid;
+        return meetingId === selectedMeeting || meetingId?.toString() === selectedMeeting?.toString();
+      });
+      
+      if (!meeting) {
+        console.error('Meeting not found in meetings array', { selectedMeeting, meetings });
+        throw new Error('Meeting not found. Please refresh and try again.');
+      }
+      
+      console.log('Found meeting:', meeting);
+
+      // Calculate meeting end time
+      const meetingEndTime = calculateMeetingEndTime(meeting);
+
+      // Calculate delay in minutes
+      const delayMinutes = calculateDelayMinutes(delayAmount, delayUnit);
+
+      // Determine recipient type from active tab
+      const recipientType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
+
+      // Get recording URL if available (from meeting or registrant data)
+      const recordingUrl = meeting.recording_url || null;
+
+      // Include all registrant fields in recipient_list for maximum flexibility
+      // This allows the backend to use any variables from the template without
+      // needing to regenerate the recipient_list if the template changes
+      // Send data as-is - no default values to preserve user's ability to see missing data
+      const recipientList = registrants.map((registrant: any) => ({
+        ...registrant,
+      }));
+
+      const payload = {
+        user_id: userData.userId,
+        meeting_id: selectedMeeting,
+        meeting_topic: meeting.topic || '',
+        recipient_type: recipientType,
+        template_id: selectedTemplateId,
+        recording_url: recordingUrl,
+        recipient_list: recipientList,
+        meeting_end_time: meetingEndTime,
+        delay_minutes: delayMinutes,
+        send_status: 'pending',
+      };
+
+      const url = `https://app.greysolve.com/webhook/outreach-sending-jobs`;
+      console.log('Creating sending package - URL:', url);
+      console.log('Creating sending package - Payload:', payload);
+
+      const response = await fetch(
+        url,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create sending package: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Sending package created:', result);
+      setSaveMessage('Sending package created successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error creating sending package:', error);
+      setSaveError(error.message || 'Failed to create sending package. Please try again.');
+      setTimeout(() => setSaveError(''), 5000);
+    } finally {
+      setIsCreatingPackage(false);
+    }
+  };
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (userData?.userId && hasSubscription && connections.length > 0) {
+      fetchMeetings();
+      fetchTemplates();
+    }
+  }, [userData?.userId, hasSubscription, connections]);
+
+  useEffect(() => {
+    if (selectedMeeting && connections.length > 0) {
+      fetchAssignment();
+      fetchRegistrants();
+    } else if (!selectedMeeting) {
+      setAssignment(null);
+      setSelectedTemplateId('');
+      setCurrentTemplate(null);
+      setTemplateName('');
+      setEmailSubject('');
+      setAttendeesEmail('');
+      setNoShowsEmail('');
+      setRegistrants([]);
+    }
+  }, [selectedMeeting, connections]);
 
   const checkAuth = async () => {
     // Check Supabase session
@@ -35,16 +336,471 @@ export default function Dashboard() {
       userId: session.user.id,
     });
 
-    // TODO: Check subscription status from your backend/database
-    // For now, defaulting to false (needs subscription)
-    setHasSubscription(false);
+    // Check connections first - both required
+    const connectionsValid = await checkConnections(session.user.id);
+    if (!connectionsValid) {
+      // Missing connections - redirect to onboarding
+      navigate('/onboarding');
+      return;
+    }
+
+    // Check subscription status
+    await checkSubscription(session.user.id);
     setIsLoading(false);
   };
+
+  const checkConnections = async (userId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/check-connection?userId=${userId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Normalize to array
+        const connectionsList = Array.isArray(data) ? data : [data];
+        
+        // Store connections for later use
+        setConnections(connectionsList);
+        
+        // Initialize both as false
+        let zoomActive = false;
+        let gmailActive = false;
+        
+        // Loop through connections and set state based on what we find
+        connectionsList.forEach((conn: any) => {
+          zoomActive = zoomActive || (conn.provider === 'zoom' && conn.status === 'active');
+          gmailActive = gmailActive || ((conn.provider === 'gmail' || conn.provider === 'google-mail') && conn.status === 'active');
+        });
+        
+        return zoomActive && gmailActive;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking connections:', error);
+      return false;
+    }
+  };
+
+  const checkSubscription = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/check-subscription?userId=${userId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // API can return either a single object or an array
+        if (Array.isArray(data)) {
+          const hasActiveSubscription = data.length > 0 && data.some(
+            (sub: any) => sub.subscription_status === 'active'
+          );
+          setHasSubscription(hasActiveSubscription);
+        } else if (data && typeof data === 'object') {
+          const hasActiveSubscription = data.subscription_status === 'active';
+          setHasSubscription(hasActiveSubscription);
+        } else {
+          setHasSubscription(false);
+        }
+      } else {
+        setHasSubscription(false);
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      setHasSubscription(false);
+    }
+  };
+
+  const fetchMeetings = async () => {
+    if (!userData?.userId) return;
+
+    // Get Zoom connection ID from stored connections
+    const zoomConnection = connections.find((conn: any) => conn.provider === 'zoom' && conn.status === 'active');
+    if (!zoomConnection?.nango_connection_id) {
+      console.log('No active Zoom connection found');
+      return;
+    }
+
+    setIsLoadingMeetings(true);
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/zoom-meeting-list?userId=${userData.userId}&connectionId=${zoomConnection.nango_connection_id}&provider=${zoomConnection.provider}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Meetings API response:', data);
+        // API returns array with object containing meetings: [{ meetings: [...], page_size, ... }]
+        const responseData = Array.isArray(data) ? data[0] : data;
+        const meetingsList = responseData?.meetings || [];
+        console.log('Extracted meetings list:', meetingsList);
+        setMeetings(meetingsList);
+      }
+    } catch (error) {
+      console.error('Error fetching meetings:', error);
+    } finally {
+      setIsLoadingMeetings(false);
+    }
+  };
+
+  const handleDropdownClick = () => {
+    // If meetings list is empty, fetch them
+    if (meetings.length === 0) {
+      fetchMeetings();
+    }
+  };
+
+  const fetchTemplates = async () => {
+    if (!userData?.userId) return;
+
+    setIsLoadingTemplates(true);
+    try {
+      // Get template_type based on active tab (attendees or no_shows)
+      const templateType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&template_type=${templateType}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const templatesList = Array.isArray(data) ? data : (data ? [data] : []);
+        setTemplates(templatesList);
+      }
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
+  const fetchAssignment = async () => {
+    if (!selectedMeeting || !userData?.userId) return;
+
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/meeting-assignments/${selectedMeeting}?userId=${userData.userId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.template_id) {
+          setAssignment(data);
+          setSelectedTemplateId(data.template_id);
+          // Load the template content
+          loadTemplate(data.template_id);
+        } else {
+          setAssignment(null);
+          setSelectedTemplateId('');
+          setCurrentTemplate(null);
+          setTemplateName('');
+          setEmailSubject('');
+          setAttendeesEmail('');
+          setNoShowsEmail('');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching assignment:', error);
+    }
+  };
+
+  const fetchRegistrants = async () => {
+    console.log('fetchRegistrants called', { selectedMeeting, userId: userData?.userId, connectionsLength: connections.length });
+    
+    if (!selectedMeeting || !userData?.userId) {
+      console.log('Early return: missing selectedMeeting or userId');
+      return;
+    }
+
+    // Get Zoom connection ID from stored connections
+    const zoomConnection = connections.find((conn: any) => conn.provider === 'zoom' && conn.status === 'active');
+    console.log('Zoom connection found:', zoomConnection);
+    
+    if (!zoomConnection?.nango_connection_id) {
+      console.log('No active Zoom connection found - early return');
+      setRegistrants([]);
+      return;
+    }
+
+    console.log('Making API call to fetch registrants...');
+    setIsLoadingRegistrants(true);
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/zoom-registrants?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Registrants API response:', data);
+        
+        // Handle different response formats
+        let registrantsList: any[] = [];
+        if (Array.isArray(data)) {
+          // Response is array: [{ registrants: [...], page_size, ... }]
+          const responseData = data[0];
+          if (responseData?.registrants && Array.isArray(responseData.registrants)) {
+            registrantsList = responseData.registrants;
+          } else {
+            // If array doesn't have registrants property, assume it's the registrants array itself
+            registrantsList = data;
+          }
+        } else if (data?.registrants && Array.isArray(data.registrants)) {
+          registrantsList = data.registrants;
+        } else if (data?.data && Array.isArray(data.data)) {
+          registrantsList = data.data;
+        } else if (data && typeof data === 'object') {
+          // If it's a single object, wrap it in an array
+          registrantsList = [data];
+        }
+        
+        console.log('Parsed registrants list:', registrantsList);
+        if (registrantsList.length > 0) {
+          console.log('First registrant structure:', registrantsList[0]);
+          console.log('Available fields:', Object.keys(registrantsList[0]));
+        }
+        setRegistrants(registrantsList);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to fetch registrants:', response.status, errorText);
+        setRegistrants([]);
+      }
+    } catch (error) {
+      console.error('Error fetching registrants:', error);
+      setRegistrants([]);
+    } finally {
+      setIsLoadingRegistrants(false);
+    }
+  };
+
+  const loadTemplate = async (templateId: string) => {
+    if (!userData?.userId) return;
+
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${templateId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const template = await response.json();
+        setCurrentTemplate(template);
+        setTemplateName(template.name || '');
+        setEmailSubject(template.subject || '');
+        if (activeTab === 'attendees') {
+          setAttendeesEmail(template.body || '');
+        } else {
+          setNoShowsEmail(template.body || '');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading template:', error);
+    }
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (templateId) {
+      // Try to find template in the already-loaded templates array first
+      const existingTemplate = templates.find((t: any) => t.id === templateId);
+      if (existingTemplate) {
+        // Use the template data we already have
+        setCurrentTemplate(existingTemplate);
+        setTemplateName(existingTemplate.name || '');
+        setEmailSubject(existingTemplate.subject || '');
+        if (activeTab === 'attendees') {
+          setAttendeesEmail(existingTemplate.body || '');
+        } else {
+          setNoShowsEmail(existingTemplate.body || '');
+        }
+      } else {
+        // If not found in array, fetch from API
+        loadTemplate(templateId);
+      }
+    } else {
+      setCurrentTemplate(null);
+      setTemplateName('');
+      setEmailSubject('');
+      if (activeTab === 'attendees') {
+        setAttendeesEmail('');
+      } else {
+        setNoShowsEmail('');
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedMeeting || !userData?.userId) {
+      setSaveError('Please select a meeting first');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage('');
+    setSaveError('');
+
+    try {
+      let templateId = selectedTemplateId;
+      const templateType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
+      const emailBody = activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
+
+      console.log('Saving template:', { selectedTemplateId, templateType, hasSubject: !!emailSubject, hasBody: !!emailBody });
+
+      // If template is selected, update it
+      if (selectedTemplateId && currentTemplate) {
+        const updatedTemplate = {
+          user_id: userData.userId,
+          template_type: templateType,
+          subject: emailSubject,
+          body: emailBody,
+          name: templateName || currentTemplate.name || emailSubject || `${templateType} template`,
+        };
+
+        console.log('Updating template:', updatedTemplate);
+
+        const updateResponse = await fetch(
+          `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${selectedTemplateId}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTemplate),
+          }
+        );
+
+        if (!updateResponse.ok) {
+          const errorText = await updateResponse.text();
+          throw new Error(`Failed to update template: ${updateResponse.status} ${errorText}`);
+        }
+
+        console.log('Template updated successfully');
+      } else {
+        // No template selected - create a new one
+        if (!templateName) {
+          setSaveError('Please provide a template name');
+          setIsSaving(false);
+          return;
+        }
+
+        const newTemplate = {
+          user_id: userData.userId,
+          template_type: templateType,
+          subject: emailSubject,
+          body: emailBody,
+          name: templateName,
+        };
+
+        console.log('Creating new template:', newTemplate);
+
+        const createResponse = await fetch(
+          `https://app.greysolve.com/webhook/templates`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTemplate),
+          }
+        );
+
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          throw new Error(`Failed to create template: ${createResponse.status} ${errorText}`);
+        }
+
+        const createdTemplate = await createResponse.json();
+        console.log('Template created:', createdTemplate);
+        templateId = createdTemplate.id;
+        setSelectedTemplateId(templateId);
+        setCurrentTemplate(createdTemplate);
+      }
+
+      // UPSERT assignment
+      console.log('Creating/updating assignment:', { user_id: userData.userId, meeting_id: selectedMeeting, template_id: templateId, template_type: templateType });
+
+      const assignmentResponse = await fetch(
+        `https://app.greysolve.com/webhook/meeting-assignments?userId=${userData.userId}&meetingId=${selectedMeeting}&templateType=${templateType}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userData.userId,
+            meeting_id: selectedMeeting,
+            template_id: templateId,
+            template_type: templateType,
+            delay_amount: delayAmount,
+            delay_unit: delayUnit,
+          }),
+        }
+      );
+
+      if (!assignmentResponse.ok) {
+        const errorText = await assignmentResponse.text();
+        throw new Error(`Failed to save assignment: ${assignmentResponse.status} ${errorText}`);
+      }
+
+      console.log('Assignment saved successfully');
+
+      // Refresh assignment and templates
+      await fetchAssignment();
+      await fetchTemplates();
+
+      setSaveMessage('Template and assignment saved successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error saving:', error);
+      setSaveError(error.message || 'Failed to save. Please try again.');
+      setTimeout(() => setSaveError(''), 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getCurrentEmailContent = () => {
+    return activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
+  };
+
+  // Refetch templates when tab changes
+  useEffect(() => {
+    if (userData?.userId && hasSubscription) {
+      fetchTemplates();
+      // Reset template selection when tab changes
+      setSelectedTemplateId('');
+      setCurrentTemplate(null);
+      setTemplateName('');
+      setEmailSubject('');
+    }
+  }, [activeTab]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -76,10 +832,6 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Welcome back, {userData?.firstName}!
-        </h1>
-
         {/* Subscription Paywall */}
         {!hasSubscription && (
           <div className="bg-white rounded-xl shadow-lg border-2 border-blue-200 p-8 mb-8">
@@ -120,19 +872,24 @@ export default function Dashboard() {
                     <span>Email support</span>
                   </li>
                 </ul>
-                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+                <a
+                  href="https://buy.stripe.com/test_9B6bJ10hggqRd5rc9T1kA02"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+                >
                   Select Plan
-                </button>
+                </a>
               </div>
 
-              {/* Lifetime Plan - Featured */}
+              {/* Lifetime Plan */}
               <div className="border-2 border-blue-500 rounded-lg p-6 bg-blue-50 relative">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">
                   Best Value
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Lifetime</h3>
                 <div className="mb-4">
-                  <span className="text-3xl font-bold text-gray-900">$79</span>
+                  <span className="text-3xl font-bold text-gray-900">$129</span>
                   <span className="text-gray-600"> one-time</span>
                 </div>
                 <ul className="space-y-2 mb-6">
@@ -149,9 +906,14 @@ export default function Dashboard() {
                     <span>No recurring charges</span>
                   </li>
                 </ul>
-                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+                <a
+                  href="https://buy.stripe.com/test_5kQ7sL9RQcaB7L73Dn1kA00"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+                >
                   Select Plan
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -159,13 +921,363 @@ export default function Dashboard() {
 
         {/* Dashboard Content (shown when subscribed) */}
         {hasSubscription && (
-          <div className="bg-white rounded-xl shadow p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Dashboard</h2>
-            <p className="text-gray-600">Your meeting follow-ups will appear here.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Sidebar - Meeting Selector */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow p-6 sticky top-6 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Select Meeting</h2>
+                  <button
+                    onClick={fetchMeetings}
+                    disabled={isLoadingMeetings}
+                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
+                    title="Refresh meetings"
+                  >
+                    <RefreshCw className={`w-5 h-5 ${isLoadingMeetings ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                <select
+                  value={selectedMeeting}
+                  onChange={(e) => setSelectedMeeting(e.target.value)}
+                  onClick={handleDropdownClick}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Choose a meeting...</option>
+                  {meetings.map((meeting: any) => {
+                    console.log('Rendering meeting option:', meeting);
+                    return (
+                      <option key={meeting.id || meeting.uuid} value={meeting.id || meeting.uuid}>
+                        {meeting.topic || 'Untitled Meeting'}
+                      </option>
+                    );
+                  })}
+                </select>
+                {meetings.length === 0 && !isLoadingMeetings && (
+                  <p className="mt-4 text-sm text-gray-500">
+                    No meetings found. Click refresh to load meetings from Zoom.
+                  </p>
+                )}
+                {isLoadingMeetings && (
+                  <p className="mt-4 text-sm text-blue-600 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading meetings...
+                  </p>
+                )}
+
+                {/* Variable Chips */}
+                {selectedMeeting && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Template Variables</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {variables.map((variable) => (
+                        <div
+                          key={variable.value}
+                          draggable
+                          onDragStart={(e) => handleVariableDragStart(e, variable.value)}
+                          onClick={() => handleVariableClick(variable.value)}
+                          className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-md text-sm font-mono text-blue-700 cursor-move hover:bg-blue-100 hover:border-blue-300 transition select-none"
+                          title="Drag to editor or click to insert"
+                        >
+                          {variable.label}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Drag and drop or click to insert into email
+                    </p>
+                  </div>
+                )}
+
+                {/* Send Schedule */}
+                {selectedMeeting && (
+                  <div className="mt-auto pt-6 border-t border-gray-200">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Send Schedule</h3>
+                    
+                    {/* Delay Amount Box */}
+                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 mb-3">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Delay Amount</label>
+                      <input
+                        type="number"
+                        value={delayAmount}
+                        onChange={(e) => setDelayAmount(parseInt(e.target.value) || 5)}
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                      />
+                    </div>
+
+                    {/* Delay Unit Box */}
+                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Time Unit</label>
+                      <select
+                        value={delayUnit}
+                        onChange={(e) => setDelayUnit(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                      >
+                        <option value="minutes">minutes</option>
+                        <option value="hours">hours</option>
+                        <option value="days">days</option>
+                      </select>
+                    </div>
+
+                    <p className="text-xs text-gray-500 mt-2">Send after meeting ends</p>
+                    
+                    {/* Create Sending Package Button */}
+                    <button
+                      onClick={handleCreateSendingPackage}
+                      disabled={!selectedMeeting || !selectedTemplateId || isCreatingPackage || registrants.length === 0}
+                      className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isCreatingPackage && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {isCreatingPackage ? 'Creating...' : 'Create Sending Package'}
+                    </button>
+                    {saveError && (
+                      <p className="text-xs text-red-600 mt-2">{saveError}</p>
+                    )}
+                    {saveMessage && (
+                      <p className="text-xs text-green-600 mt-2">{saveMessage}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Panel - Email Editor */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-xl shadow">
+                {/* Tabs */}
+                <div className="border-b border-gray-200">
+                  <div className="flex">
+                    <button
+                      onClick={() => setActiveTab('attendees')}
+                      className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition ${
+                        activeTab === 'attendees'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <Users className="w-4 h-4" />
+                        <span>Attendees</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('noShows')}
+                      className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition ${
+                        activeTab === 'noShows'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <UserX className="w-4 h-4" />
+                        <span>No Shows</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Template Name */}
+                <div className="px-6 pt-6 pb-4 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Template Name
+                  </label>
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="Enter template name..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={!selectedMeeting}
+                  />
+                </div>
+
+                {/* Template Selector */}
+                <div className="px-6 pt-4 pb-4 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Template
+                  </label>
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(e) => handleTemplateSelect(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={!selectedMeeting}
+                  >
+                    <option value="">
+                      {assignment ? 'Select template...' : 'Select template...'}
+                    </option>
+                    {templates.map((template: any) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name || `Template ${template.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Email Subject */}
+                <div className="px-6 pt-4 pb-2 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Email subject..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={!selectedMeeting}
+                  />
+                </div>
+
+                {/* Rich Text Editor */}
+                <div className="p-6">
+                  {!selectedMeeting ? (
+                    <div className="min-h-[400px] p-4 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500">
+                      Select a meeting to start editing
+                    </div>
+                  ) : (
+                    <div onDrop={handleEditorDrop} onDragOver={(e) => e.preventDefault()}>
+                      <ReactQuill
+                        ref={quillRef}
+                        theme="snow"
+                        value={getCurrentEmailContent()}
+                        onChange={(content) => {
+                          // Strip color styles before saving
+                          const cleanedContent = stripColorStyles(content);
+                          if (activeTab === 'attendees') {
+                            setAttendeesEmail(cleanedContent);
+                          } else {
+                            setNoShowsEmail(cleanedContent);
+                          }
+                        }}
+                        className="min-h-[400px] [&_.ql-editor]:text-black [&_.ql-editor]:text-lg"
+                        modules={{
+                          toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            ['link'],
+                            ['clean']
+                          ]
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Save Button */}
+                <div className="border-t border-gray-200 p-4 bg-gray-50">
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={handlePreviewClick}
+                      disabled={!selectedMeeting}
+                      className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Preview
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={!selectedMeeting || isSaving}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                  {saveMessage && (
+                    <div className="text-sm text-green-600 mt-2">{saveMessage}</div>
+                  )}
+                  {saveError && (
+                    <div className="text-sm text-red-600 mt-2">{saveError}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Preview Modal */}
+        {isPreviewOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900">Email Preview</h2>
+                <button
+                  onClick={() => {
+                    setIsPreviewOpen(false);
+                    setSelectedRegistrantForPreview(null);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* Registrant Selector */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Registrant
+                  </label>
+                  {isLoadingRegistrants ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading registrants...
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedRegistrantForPreview?.id || ''}
+                      onChange={(e) => {
+                        const registrant = registrants.find((r: any) => r.id === e.target.value);
+                        handleRegistrantSelect(registrant);
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={registrants.length === 0}
+                    >
+                      <option value="">
+                        {registrants.length === 0 ? 'No registrants found' : 'Choose a registrant...'}
+                      </option>
+                      {registrants.map((registrant: any) => (
+                        <option key={registrant.id} value={registrant.id}>
+                          {registrant.first_name} {registrant.last_name} ({registrant.email})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Preview Content */}
+                {selectedRegistrantForPreview && (
+                  <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Subject:</label>
+                      <div 
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg"
+                        dangerouslySetInnerHTML={{ __html: getPreviewSubject() || '<span class="text-gray-400">No subject</span>' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Body:</label>
+                      <div
+                        className="px-4 py-4 bg-white border border-gray-300 rounded-lg min-h-[300px] prose max-w-none"
+                        dangerouslySetInnerHTML={{ __html: getPreviewContent() || '<span class="text-gray-400">No content</span>' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!selectedRegistrantForPreview && (
+                  <div className="text-center py-12 text-gray-500">
+                    Select a registrant to preview the email
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
-

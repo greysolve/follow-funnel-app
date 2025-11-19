@@ -57,7 +57,7 @@ export default function ZoomFollowUpLanding() {
               and track engagement—all within minutes of your Zoom calls ending.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={() => navigate('/signup')}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
@@ -67,17 +67,6 @@ export default function ZoomFollowUpLanding() {
               <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-medium hover:border-gray-400 transition">
                 Watch Demo
               </button>
-            </div>
-            
-            <div className="flex items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>No credit card required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>14-day free trial</span>
-              </div>
             </div>
           </div>
 

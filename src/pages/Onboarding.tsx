@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, CheckCircle, Loader2 } from 'lucide-react';
+import { Video, CheckCircle, Loader2, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function Onboarding() {
@@ -11,15 +11,24 @@ export default function Onboarding() {
   const [zoomError, setZoomError] = useState<string>('');
   const [isConnectingZoom, setIsConnectingZoom] = useState(false);
   const [zoomConnected, setZoomConnected] = useState(false);
+  const [emailConnected, setEmailConnected] = useState(false);
+  const [isConnectingEmail, setIsConnectingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<string>('');
+  const [emailError, setEmailError] = useState<string>('');
 
   useEffect(() => {
     checkAuth();
   }, []);
 
   useEffect(() => {
-    // Check Zoom connection status after auth is confirmed
+    // Check connection status after auth is confirmed
+    console.log('useEffect for connections:', { hasUserData: !!userData, isLoading, userId: userData?.userId });
     if (userData && !isLoading) {
-      checkZoomConnection();
+      // Reset connection states before checking
+      console.log('Resetting connection states and checking...');
+      setZoomConnected(false);
+      setEmailConnected(false);
+      checkConnections();
     }
   }, [userData, isLoading]);
 
@@ -68,28 +77,48 @@ export default function Onboarding() {
     setIsLoading(false);
   };
 
-  const checkZoomConnection = async () => {
-    if (!userData?.userId) return;
+  const checkConnections = async () => {
+    console.log('checkConnections called, userId:', userData?.userId);
+    if (!userData?.userId) {
+      console.log('No userId, returning early');
+      return;
+    }
 
     try {
-      // Call your backend to check if Zoom is connected
-      const response = await fetch(
-        `https://app.greysolve.com/webhook/check-connection?userId=${userData.userId}&provider=zoom`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const url = `https://app.greysolve.com/webhook/check-connection?userId=${userData.userId}`;
+      console.log('Fetching connections from:', url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
       if (response.ok) {
         const data = await response.json();
-        // Adjust this based on your API response structure
-        if (data.connected || data.status === 'active') {
-          setZoomConnected(true);
-        }
+        console.log('Connections check response:', data);
+        
+        // Initialize both as false
+        let zoomActive = false;
+        let gmailActive = false;
+        
+        // Normalize to array
+        const connections = Array.isArray(data) ? data : [data];
+        
+        // Loop through connections and set state based on what we find
+        connections.forEach((conn: any) => {
+          zoomActive = zoomActive || (conn.provider === 'zoom' && conn.status === 'active');
+          gmailActive = gmailActive || ((conn.provider === 'gmail' || conn.provider === 'google-mail') && conn.status === 'active');
+        });
+        
+        console.log('Final connection status:', { zoomActive, gmailActive });
+        setZoomConnected(zoomActive);
+        setEmailConnected(gmailActive);
+      } else {
+        console.log('Connections check failed:', response.status);
+        setZoomConnected(false);
+        setEmailConnected(false);
       }
     } catch (error) {
-      console.error('Error checking Zoom connection:', error);
+      console.error('Error checking connections:', error);
       // Don't show error to user, just assume not connected
     }
   };
@@ -106,24 +135,20 @@ export default function Onboarding() {
       return;
     }
 
-    // Log what we're sending for debugging
-    const requestBody = {
-      end_user: {
-        id: userId,
-        email: email,
-      },
-    };
-    console.log('Connecting Zoom with:', requestBody);
-    console.log('Email being sent:', email);
-    console.log('User ID being sent:', userId);
-
     setIsConnectingZoom(true);
     setZoomError('');
     setZoomStatus('Requesting session token...');
 
     try {
-      // Call your n8n webhook
-      const response = await fetch('https://app.greysolve.com/webhook-test/create-zoom-auth', {
+      const requestBody = {
+        end_user: {
+          id: userId,
+          email: email,
+        },
+      };
+      console.log('Connecting Zoom with:', requestBody);
+
+      const response = await fetch('https://app.greysolve.com/webhook/create-zoom-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -145,9 +170,9 @@ export default function Onboarding() {
         return;
       }
 
-      setZoomStatus('Opening Zoom OAuth...');
+      setZoomStatus('Opening Zoom authorization...');
 
-      // Open the connect link in popup (this should be the OAuth provider URL from your webhook)
+      // Open the connect link in popup
       const popup = window.open(
         data.data.connect_link,
         'Connect Zoom',
@@ -162,20 +187,16 @@ export default function Onboarding() {
 
       setZoomStatus('Complete authorization in popup window');
 
-      // Listen for popup to close or message from popup
+      // Listen for popup to close
       const checkPopup = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkPopup);
-          // Check if connection was successful (you might want to verify with your backend)
-          // For now, we'll assume success if popup closes
           setZoomStatus('');
-          setZoomConnected(true);
           setIsConnectingZoom(false);
           
-          // Redirect to dashboard after Zoom connection
-          // Note: In the future, you might want to wait for inbox connection too
-          setTimeout(() => {
-            navigate('/dashboard');
+          // Check connection status after popup closes
+          setTimeout(async () => {
+            await checkConnections();
           }, 1000);
         }
       }, 500);
@@ -187,41 +208,116 @@ export default function Onboarding() {
           popup.close();
         }
       }, 300000);
-
     } catch (error: any) {
-      let errorMessage = 'Error: ';
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage += 'Network error. This could be due to:\n';
-        errorMessage += '- CORS policy blocking the request\n';
-        errorMessage += '- Network connectivity issues\n';
-        errorMessage += '- The server is not responding\n\n';
-        errorMessage += 'Original error: ' + error.message;
-      } else {
-        errorMessage += error.message;
-      }
-      setZoomError(errorMessage);
-      setZoomStatus('');
+      console.error('Zoom connection error:', error);
       setIsConnectingZoom(false);
-      console.error('Full error:', error);
+      setZoomStatus('');
+      setZoomError(
+        error.message ||
+        'Failed to connect Zoom. Please check your connection and try again.'
+      );
+    }
+  };
+
+  const connectGmail = async () => {
+    // Double-check we have the latest session data
+    const { data: { session } } = await supabase.auth.getSession();
+    const email = session?.user?.email || userData?.email;
+    const userId = session?.user?.id || userData?.userId;
+
+    if (!email || !userId) {
+      setEmailError('User information not available. Please refresh the page.');
+      console.error('Missing user data:', { email, userId, userData, session });
+      return;
+    }
+
+    setIsConnectingEmail(true);
+    setEmailError('');
+    setEmailStatus('Requesting session token...');
+
+    try {
+      const requestBody = {
+        end_user: {
+          id: userId,
+          email: email,
+        },
+      };
+      console.log('Connecting Gmail with:', requestBody);
+
+      const response = await fetch('https://app.greysolve.com/webhook/create-gmail-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create Gmail auth: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Gmail auth response:', data);
+
+      if (!data.data || !data.data.connect_link) {
+        throw new Error('No connect link received from server');
+      }
+
+      setEmailStatus('Opening Gmail authorization...');
+
+      // Open OAuth popup
+      const popup = window.open(
+        data.data.connect_link,
+        'gmail-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
+
+      if (!popup) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
+
+      setEmailStatus('Complete authorization in popup window');
+
+      // Listen for popup to close
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          setEmailStatus('');
+          setIsConnectingEmail(false);
+          
+          // Check connection status after popup closes
+          setTimeout(async () => {
+            await checkConnections();
+          }, 1000);
+        }
+      }, 500);
+    } catch (error: any) {
+      console.error('Gmail connection error:', error);
+      setIsConnectingEmail(false);
+      setEmailStatus('');
+      setEmailError(
+        error.message ||
+        'Failed to connect Gmail. Please check your connection and try again.'
+      );
     }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   const firstName = userData?.firstName || 'there';
-  const needsEmailConfirmation = userData?.needsEmailConfirmation;
+  const needsEmailConfirmation = userData?.needsEmailConfirmation || false;
+  const allConnected = zoomConnected && emailConnected;
 
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center gap-2">
             <Video className="w-8 h-8 text-blue-600" />
             <span className="text-xl font-semibold">FollowFunnel</span>
@@ -248,80 +344,125 @@ export default function Onboarding() {
           )}
         </div>
 
-        {/* Onboarding Steps */}
-        <div className="bg-gray-50 rounded-xl p-8 space-y-6">
-          <div className="flex items-start gap-4">
-            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-              zoomConnected ? 'bg-green-100' : 'bg-blue-100'
-            }`}>
-              {zoomConnected ? (
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              ) : (
-                <span className="text-blue-600 font-semibold">1</span>
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">
-                Connect your Zoom
-                {zoomConnected && <span className="ml-2 text-green-600 text-sm">✓ Connected</span>}
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Link your Zoom account to capture meeting data automatically
-              </p>
-              {zoomStatus && (
-                <div className="mt-2 text-sm text-blue-600">{zoomStatus}</div>
-              )}
-              {zoomError && (
-                <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
-                  {zoomError.split('\n').map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
+        {/* Integration Cards */}
+        <div className="space-y-4 mb-8">
+          {/* Zoom Integration */}
+          <div className="bg-gray-50 rounded-xl p-6 border-2 border-transparent hover:border-gray-200 transition">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                  zoomConnected ? 'bg-green-100' : 'bg-blue-100'
+                }`}>
+                  {zoomConnected ? (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <Video className="w-6 h-6 text-blue-600" />
+                  )}
                 </div>
-              )}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1 text-lg">
+                    Zoom
+                    {zoomConnected && <span className="ml-2 text-green-600 text-sm">✓ Connected</span>}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Link your Zoom account to capture meeting data automatically
+                  </p>
+                  {zoomStatus && (
+                    <div className="text-sm text-blue-600">{zoomStatus}</div>
+                  )}
+                  {zoomError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+                      {zoomError.split('\n').map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                {zoomConnected ? (
+                  <div className="px-4 py-2 text-green-600 font-medium">Connected</div>
+                ) : (
+                  <button
+                    onClick={connectZoom}
+                    disabled={isConnectingZoom}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isConnectingZoom && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isConnectingZoom ? 'Connecting...' : 'Connect'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-gray-600 font-semibold">2</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Connect your inbox</h3>
-              <p className="text-gray-600 text-sm">
-                Connect your email to send follow-up emails automatically
-              </p>
+          {/* Gmail Integration */}
+          <div className="bg-gray-50 rounded-xl p-6 border-2 border-transparent hover:border-gray-200 transition">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                  emailConnected ? 'bg-green-100' : 'bg-blue-100'
+                }`}>
+                  {emailConnected ? (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <Mail className="w-6 h-6 text-blue-600" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1 text-lg">
+                    Gmail
+                    {emailConnected && <span className="ml-2 text-green-600 text-sm">✓ Connected</span>}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Connect your Gmail account to send follow-up emails automatically
+                  </p>
+                  {emailStatus && (
+                    <div className="text-sm text-blue-600">{emailStatus}</div>
+                  )}
+                  {emailError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+                      {emailError.split('\n').map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                {emailConnected ? (
+                  <div className="px-4 py-2 text-green-600 font-medium">Connected</div>
+                ) : (
+                  <button
+                    onClick={connectGmail}
+                    disabled={isConnectingEmail}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isConnectingEmail && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isConnectingEmail ? 'Connecting...' : 'Connect'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* CTA Buttons */}
-        <div className="mt-8 text-center space-y-4">
-          {!zoomConnected ? (
-            <button
-              onClick={connectZoom}
-              disabled={isConnectingZoom}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-            >
-              {isConnectingZoom && <Loader2 className="w-5 h-5 animate-spin" />}
-              {isConnectingZoom ? 'Connecting...' : 'Connect Zoom'}
-            </button>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-green-600 font-medium">Zoom connected successfully!</div>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
-              >
-                Continue to Dashboard
-              </button>
-            </div>
-          )}
-          {!zoomConnected && (
-            <div className="text-sm text-gray-500">Both connections required to continue</div>
+        {/* Dashboard Button */}
+        <div className="text-center">
+          <button
+            onClick={() => navigate('/dashboard')}
+            disabled={!allConnected}
+            className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Go to Dashboard
+          </button>
+          {!allConnected && (
+            <p className="mt-3 text-sm text-gray-500">
+              Connect both integrations to continue
+            </p>
           )}
         </div>
       </div>
     </div>
   );
 }
-
