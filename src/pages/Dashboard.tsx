@@ -873,7 +873,7 @@ export default function Dashboard() {
                   </li>
                 </ul>
                 <a
-                  href="https://buy.stripe.com/test_9B6bJ10hggqRd5rc9T1kA02"
+                  href="https://buy.stripe.com/00waEX3rd1xm7rVb7p3ZK04"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
@@ -907,7 +907,7 @@ export default function Dashboard() {
                   </li>
                 </ul>
                 <a
-                  href="https://buy.stripe.com/test_5kQ7sL9RQcaB7L73Dn1kA00"
+                  href="https://buy.stripe.com/3cI8wPgdZdg44fJb7p3ZK03"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
