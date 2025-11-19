@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, RefreshCw, Eye, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -21,7 +21,7 @@ export default function Dashboard() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [currentTemplate, setCurrentTemplate] = useState<any>(null);
   const [assignment, setAssignment] = useState<any>(null);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [_isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [emailSubject, setEmailSubject] = useState<string>('');
   const [templateName, setTemplateName] = useState<string>('');

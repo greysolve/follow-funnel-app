@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, Calendar, Mail, CheckCircle, Users, Zap } from 'lucide-react';
 
