@@ -1,11 +1,11 @@
-export default function Terms() {
+export default function ZoomDocumentation() {
   return (
     <div className="fixed inset-0 w-full h-full">
       <object
-        data="/terms.pdf"
+        data="/Follow Funnel documentation.pdf"
         type="application/pdf"
         className="w-full h-full border-0"
-        aria-label="Terms of Service"
+        aria-label="Zoom Documentation"
       >
         <div className="flex items-center justify-center h-full bg-gray-50">
           <div className="text-center">
@@ -13,7 +13,7 @@ export default function Terms() {
               Unable to display PDF.
             </p>
             <a 
-              href="/terms.pdf" 
+              href="/Follow Funnel documentation.pdf" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-blue-600 hover:underline"
