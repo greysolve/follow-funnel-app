@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, CheckCircle, Loader2, Mail } from 'lucide-react';
+import { Video, CheckCircle, Loader2, Mail, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import UserMenu from '../components/UserMenu';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function Onboarding() {
   const [isConnectingEmail, setIsConnectingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
+  const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -29,8 +31,16 @@ export default function Onboarding() {
       setZoomConnected(false);
       setEmailConnected(false);
       checkConnections();
+      checkSubscription();
     }
   }, [userData, isLoading]);
+
+  useEffect(() => {
+    // Re-check subscription when connections change (in case they just connected)
+    if (zoomConnected && emailConnected && userData?.userId) {
+      checkSubscription();
+    }
+  }, [zoomConnected, emailConnected]);
 
   const checkAuth = async () => {
     // Check Supabase session first
@@ -120,6 +130,42 @@ export default function Onboarding() {
     } catch (error) {
       console.error('Error checking connections:', error);
       // Don't show error to user, just assume not connected
+    }
+  };
+
+  const checkSubscription = async () => {
+    if (!userData?.userId) return;
+    
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/check-subscription?userId=${userData.userId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // API can return either a single object or an array
+        if (Array.isArray(data)) {
+          const hasActiveSubscription = data.length > 0 && data.some(
+            (sub: any) => sub.subscription_status === 'active'
+          );
+          setHasSubscription(hasActiveSubscription);
+        } else if (data && typeof data === 'object') {
+          const hasActiveSubscription = data.subscription_status === 'active';
+          setHasSubscription(hasActiveSubscription);
+        } else {
+          setHasSubscription(false);
+        }
+      } else {
+        setHasSubscription(false);
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      setHasSubscription(false);
     }
   };
 
@@ -318,9 +364,14 @@ export default function Onboarding() {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-2">
-            <Video className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-semibold">FollowFunnel</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Video className="w-8 h-8 text-blue-600" />
+              <span className="text-xl font-semibold">FollowFunnel</span>
+            </div>
+            
+            {/* User Menu */}
+            <UserMenu firstName={firstName} userId={userData?.userId || ''} />
           </div>
         </div>
       </header>
@@ -447,21 +498,113 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* Dashboard Button */}
-        <div className="text-center">
-          <button
-            onClick={() => navigate('/dashboard')}
-            disabled={!allConnected}
-            className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Go to Dashboard
-          </button>
-          {!allConnected && (
-            <p className="mt-3 text-sm text-gray-500">
+        {/* Paywall - Show when both connected but no subscription */}
+        {allConnected && !hasSubscription && (
+          <div className="bg-white rounded-xl shadow-lg border-2 border-blue-200 p-8 mb-8">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Your accounts are connected
+                </h2>
+                <p className="text-gray-600">
+                  Subscribe to see your meetings and start sending follow-ups
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-blue-600">
+                <CreditCard className="w-6 h-6" />
+              </div>
+            </div>
+
+            {/* Pricing Plans */}
+            <div className="grid md:grid-cols-2 gap-6 mb-6 max-w-3xl mx-auto">
+              {/* Monthly Plan */}
+              <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-blue-500 transition">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Monthly</h3>
+                <div className="mb-4">
+                  <span className="text-3xl font-bold text-gray-900">$45</span>
+                  <span className="text-gray-600">/month</span>
+                </div>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Automated Zoom follow-ups</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Unlimited meetings</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Email support</span>
+                  </li>
+                </ul>
+                <a
+                  href="https://buy.stripe.com/00waEX3rd1xm7rVb7p3ZK04"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+                >
+                  Select Plan
+                </a>
+              </div>
+
+              {/* Lifetime Plan */}
+              <div className="border-2 border-blue-500 rounded-lg p-6 bg-blue-50 relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                  Best Value
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Lifetime</h3>
+                <div className="mb-4">
+                  <span className="text-3xl font-bold text-gray-900">$129</span>
+                  <span className="text-gray-600"> one-time</span>
+                </div>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>All Monthly features</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Pay once, use forever</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>No recurring charges</span>
+                  </li>
+                </ul>
+                <a
+                  href="https://buy.stripe.com/3cI8wPgdZdg44fJb7p3ZK03"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
+                >
+                  Select Plan
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dashboard Button - Only show if subscribed */}
+        {allConnected && hasSubscription && (
+          <div className="text-center">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        )}
+
+        {/* Show message if not all connected */}
+        {!allConnected && (
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
               Connect both integrations to continue
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

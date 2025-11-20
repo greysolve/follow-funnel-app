@@ -4,6 +4,7 @@ import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, RefreshCw, Eye, 
 import { supabase } from '../lib/supabase';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import UserMenu from '../components/UserMenu';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -815,17 +816,10 @@ export default function Dashboard() {
             <span className="text-xl font-semibold">FollowFunnel</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{userData?.email}</span>
-            <button
-              onClick={() => {
-                supabase.auth.signOut();
-                localStorage.removeItem('user');
-                navigate('/');
-              }}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Sign out
-            </button>
+            <UserMenu 
+              firstName={userData?.firstName || 'User'} 
+              userId={userData?.userId || ''} 
+            />
           </div>
         </div>
       </header>
