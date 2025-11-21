@@ -583,7 +583,7 @@ export default function Dashboard() {
           } else if (templateType === 'no_shows') {
             setNoShowsSelectedTemplateId(data.template_id);
             // Load template content for no_shows tab
-            loadTemplateForTab(data.template_id, 'no_shows');
+            loadTemplateForTab(data.template_id, 'noShows');
           } else {
             // Fallback: set for current tab
             setSelectedTemplateId(data.template_id);
