@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FollowFunnel Architecture Diagram</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 20mm;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: white;
+            padding: 40px;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            font-size: 28px;
+            margin-bottom: 50px;
+        }
+        
+        .diagram {
+            position: relative;
+            min-height: 600px;
+        }
+        
+        .box {
+            position: absolute;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 140px;
+        }
+        
+        .box-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 6px;
+            color: #1a1a1a;
+        }
+        
+        .box-subtitle {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* Component types */
+        .user { background: #3B82F6; color: white; border-color: #2563EB; }
+        .user .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        .frontend { background: #8B5CF6; color: white; border-color: #7C3AED; }
+        .frontend .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        .auth { background: #10B981; color: white; border-color: #059669; }
+        .auth .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        .oauth { background: #F59E0B; color: white; border-color: #D97706; }
+        .oauth .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        .backend { background: #EF4444; color: white; border-color: #DC2626; }
+        .backend .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        .payment { background: #6366F1; color: white; border-color: #4F46E5; }
+        .payment .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        .external { background: #64748B; color: white; border-color: #475569; }
+        .external .box-subtitle { color: rgba(255,255,255,0.9); }
+        
+        /* Positions */
+        .user-box { top: 20px; left: 50px; }
+        .frontend-box { top: 20px; left: 250px; }
+        .supabase-box { top: 150px; left: 50px; }
+        .nango-box { top: 150px; left: 250px; }
+        .n8n-box { top: 150px; left: 450px; }
+        .stripe-box { top: 150px; left: 650px; }
+        .zoom-box { top: 300px; left: 350px; }
+        .gmail-box { top: 300px; left: 550px; }
+        
+        /* Arrows */
+        .arrow {
+            position: absolute;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .arrow::before {
+            content: '→';
+            font-size: 20px;
+            margin-right: 5px;
+            color: #333;
+        }
+        
+        /* Arrow positions */
+        .arrow1 { top: 55px; left: 160px; }
+        .arrow2 { top: 100px; left: 80px; }
+        .arrow3 { top: 100px; left: 280px; }
+        .arrow4 { top: 100px; left: 480px; }
+        .arrow5 { top: 100px; left: 680px; }
+        .arrow6 { top: 190px; left: 180px; }
+        .arrow7 { top: 190px; left: 380px; }
+        .arrow8 { top: 250px; left: 400px; }
+        .arrow9 { top: 250px; left: 520px; }
+        .arrow10 { top: 250px; left: 600px; }
+        
+        .flow-section {
+            margin-top: 480px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+        }
+        
+        .flow-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .flow-number {
+            background: #3B82F6;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FollowFunnel - System Architecture</h1>
+        
+        <div class="diagram">
+            <!-- User -->
+            <div class="box user user-box">
+                <div class="box-title">User</div>
+                <div class="box-subtitle">Browser</div>
+            </div>
+            
+            <!-- Frontend -->
+            <div class="box frontend frontend-box">
+                <div class="box-title">Frontend</div>
+                <div class="box-subtitle">React + Tailwind</div>
+            </div>
+            
+            <!-- Supabase -->
+            <div class="box auth supabase-box">
+                <div class="box-title">Supabase</div>
+                <div class="box-subtitle">Auth + PostgreSQL</div>
+            </div>
+            
+            <!-- Nango -->
+            <div class="box oauth nango-box">
+                <div class="box-title">Nango</div>
+                <div class="box-subtitle">OAuth Management</div>
+            </div>
+            
+            <!-- n8n -->
+            <div class="box backend n8n-box">
+                <div class="box-title">n8n</div>
+                <div class="box-subtitle">Webhooks + Logic</div>
+            </div>
+            
+            <!-- Stripe -->
+            <div class="box payment stripe-box">
+                <div class="box-title">Stripe</div>
+                <div class="box-subtitle">Payments</div>
+            </div>
+            
+            <!-- Zoom -->
+            <div class="box external zoom-box">
+                <div class="box-title">Zoom API</div>
+                <div class="box-subtitle">Meeting Data</div>
+            </div>
+            
+            <!-- Gmail -->
+            <div class="box external gmail-box">
+                <div class="box-title">Gmail API</div>
+                <div class="box-subtitle">Email Sending</div>
+            </div>
+            
+            <!-- Arrows with labels -->
+            <div class="arrow arrow1">Interact</div>
+            <div class="arrow arrow2">Auth</div>
+            <div class="arrow arrow3">OAuth</div>
+            <div class="arrow arrow4">Webhooks</div>
+            <div class="arrow arrow5">Subscribe</div>
+            <div class="arrow arrow6">Tokens</div>
+            <div class="arrow arrow7">API Calls</div>
+            <div class="arrow arrow8">Events</div>
+            <div class="arrow arrow9">Fetch</div>
+            <div class="arrow arrow10">Send</div>
+        </div>
+        
+        <div class="flow-section">
+            <div class="flow-title">Data Flow: Follow-Up Sequence</div>
+            
+            <div class="flow-step">
+                <div class="flow-number">1</div>
+                <div>User connects Zoom + Gmail accounts via OAuth (tokens stored in Nango)</div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">2</div>
+                <div>User selects meeting and configures email templates in dashboard</div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">3</div>
+                <div>Zoom meeting ends → Zoom webhook fires to n8n</div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">4</div>
+                <div>n8n fetches attendee list via Zoom API (using Nango-stored tokens)</div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">5</div>
+                <div>n8n segments attendees vs. no-shows and waits configured delay</div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">6</div>
+                <div>n8n merges template variables with attendee data (name, email, recording link)</div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">7</div>
+                <div>n8n sends personalized emails via Gmail API (user's connected account)</div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3B82F6;"></div>
+                <span>User Interface</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #8B5CF6;"></div>
+                <span>Frontend Application</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10B981;"></div>
+                <span>Authentication/Database</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #F59E0B;"></div>
+                <span>OAuth Management</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #EF4444;"></div>
+                <span>Backend Processing</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #6366F1;"></div>
+                <span>Payment Processing</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #64748B;"></div>
+                <span>External APIs</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

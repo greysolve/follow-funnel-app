@@ -19,16 +19,21 @@ export default function Dashboard() {
   const [connections, setConnections] = useState<any[]>([]);
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [currentTemplate, setCurrentTemplate] = useState<any>(null);
+  const [attendeesSelectedTemplateId, setAttendeesSelectedTemplateId] = useState<string>('');
+  const [noShowsSelectedTemplateId, setNoShowsSelectedTemplateId] = useState<string>('');
+  const [attendeesCurrentTemplate, setAttendeesCurrentTemplate] = useState<any>(null);
+  const [noShowsCurrentTemplate, setNoShowsCurrentTemplate] = useState<any>(null);
   const [assignment, setAssignment] = useState<any>(null);
   const [_isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [emailSubject, setEmailSubject] = useState<string>('');
-  const [templateName, setTemplateName] = useState<string>('');
+  const [attendeesEmailSubject, setAttendeesEmailSubject] = useState<string>('');
+  const [noShowsEmailSubject, setNoShowsEmailSubject] = useState<string>('');
+  const [attendeesTemplateName, setAttendeesTemplateName] = useState<string>('');
+  const [noShowsTemplateName, setNoShowsTemplateName] = useState<string>('');
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [saveError, setSaveError] = useState<string>('');
-  const [registrants, setRegistrants] = useState<any[]>([]);
+  const [attendeesList, setAttendeesList] = useState<any[]>([]);
+  const [noShowsList, setNoShowsList] = useState<any[]>([]);
   const [isLoadingRegistrants, setIsLoadingRegistrants] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedRegistrantForPreview, setSelectedRegistrantForPreview] = useState<any>(null);
@@ -49,6 +54,60 @@ export default function Dashboard() {
     { label: '{{Recording Link}}', value: '{{recording_link}}' },
     { label: '{{Meeting Title}}', value: '{{meeting_title}}' },
   ];
+
+  // Helper function to get the current list based on active tab
+  const getCurrentRegistrantsList = (): any[] => {
+    return activeTab === 'attendees' ? attendeesList : noShowsList;
+  };
+
+  // Helper functions to get/set tab-specific template state
+  const getSelectedTemplateId = (): string => {
+    return activeTab === 'attendees' ? attendeesSelectedTemplateId : noShowsSelectedTemplateId;
+  };
+
+  const setSelectedTemplateId = (value: string) => {
+    if (activeTab === 'attendees') {
+      setAttendeesSelectedTemplateId(value);
+    } else {
+      setNoShowsSelectedTemplateId(value);
+    }
+  };
+
+  const getCurrentTemplate = (): any => {
+    return activeTab === 'attendees' ? attendeesCurrentTemplate : noShowsCurrentTemplate;
+  };
+
+  const setCurrentTemplate = (value: any) => {
+    if (activeTab === 'attendees') {
+      setAttendeesCurrentTemplate(value);
+    } else {
+      setNoShowsCurrentTemplate(value);
+    }
+  };
+
+  const getEmailSubject = (): string => {
+    return activeTab === 'attendees' ? attendeesEmailSubject : noShowsEmailSubject;
+  };
+
+  const setEmailSubject = (value: string) => {
+    if (activeTab === 'attendees') {
+      setAttendeesEmailSubject(value);
+    } else {
+      setNoShowsEmailSubject(value);
+    }
+  };
+
+  const getTemplateName = (): string => {
+    return activeTab === 'attendees' ? attendeesTemplateName : noShowsTemplateName;
+  };
+
+  const setTemplateName = (value: string) => {
+    if (activeTab === 'attendees') {
+      setAttendeesTemplateName(value);
+    } else {
+      setNoShowsTemplateName(value);
+    }
+  };
 
   const handleVariableDragStart = (e: React.DragEvent, variable: string) => {
     e.dataTransfer.setData('text/plain', variable);
@@ -167,8 +226,8 @@ export default function Dashboard() {
   };
 
   const getPreviewSubject = (): string => {
-    if (!selectedRegistrantForPreview) return emailSubject;
-    return substituteVariables(emailSubject, selectedRegistrantForPreview);
+    if (!selectedRegistrantForPreview) return getEmailSubject();
+    return substituteVariables(getEmailSubject(), selectedRegistrantForPreview);
   };
 
   const calculateDelayMinutes = (amount: number, unit: string): number => {
@@ -194,12 +253,13 @@ export default function Dashboard() {
   };
 
   const handleCreateSendingPackage = async () => {
-    if (!selectedMeeting || !userData?.userId || !selectedTemplateId) {
+    if (!selectedMeeting || !userData?.userId || !getSelectedTemplateId()) {
       setSaveError('Please select a meeting and template first');
       return;
     }
 
-    if (registrants.length === 0) {
+    const currentList = getCurrentRegistrantsList();
+    if (currentList.length === 0) {
       setSaveError('No registrants found for this meeting');
       return;
     }
@@ -240,7 +300,7 @@ export default function Dashboard() {
       // This allows the backend to use any variables from the template without
       // needing to regenerate the recipient_list if the template changes
       // Send data as-is - no default values to preserve user's ability to see missing data
-      const recipientList = registrants.map((registrant: any) => ({
+      const recipientList = getCurrentRegistrantsList().map((registrant: any) => ({
         ...registrant,
       }));
 
@@ -249,7 +309,7 @@ export default function Dashboard() {
         meeting_id: selectedMeeting,
         meeting_topic: meeting.topic || '',
         recipient_type: recipientType,
-        template_id: selectedTemplateId,
+        template_id: getSelectedTemplateId(),
         recording_url: recordingUrl,
         recipient_list: recipientList,
         meeting_end_time: meetingEndTime,
@@ -305,13 +365,18 @@ export default function Dashboard() {
       fetchRegistrants();
     } else if (!selectedMeeting) {
       setAssignment(null);
-      setSelectedTemplateId('');
-      setCurrentTemplate(null);
-      setTemplateName('');
-      setEmailSubject('');
+      setAttendeesSelectedTemplateId('');
+      setNoShowsSelectedTemplateId('');
+      setAttendeesCurrentTemplate(null);
+      setNoShowsCurrentTemplate(null);
+      setAttendeesTemplateName('');
+      setNoShowsTemplateName('');
+      setAttendeesEmailSubject('');
+      setNoShowsEmailSubject('');
       setAttendeesEmail('');
       setNoShowsEmail('');
-      setRegistrants([]);
+      setAttendeesList([]);
+      setNoShowsList([]);
     }
   }, [selectedMeeting, connections]);
 
@@ -509,17 +574,24 @@ export default function Dashboard() {
         const data = await response.json();
         if (data && data.template_id) {
           setAssignment(data);
-          setSelectedTemplateId(data.template_id);
-          // Load the template content
-          loadTemplate(data.template_id);
+          // Load template and set it for the correct tab based on template_type
+          const templateType = data.template_type;
+          if (templateType === 'attendees') {
+            setAttendeesSelectedTemplateId(data.template_id);
+            // Load template content for attendees tab
+            loadTemplateForTab(data.template_id, 'attendees');
+          } else if (templateType === 'no_shows') {
+            setNoShowsSelectedTemplateId(data.template_id);
+            // Load template content for no_shows tab
+            loadTemplateForTab(data.template_id, 'no_shows');
+          } else {
+            // Fallback: set for current tab
+            setSelectedTemplateId(data.template_id);
+            loadTemplate(data.template_id);
+          }
         } else {
           setAssignment(null);
-          setSelectedTemplateId('');
-          setCurrentTemplate(null);
-          setTemplateName('');
-          setEmailSubject('');
-          setAttendeesEmail('');
-          setNoShowsEmail('');
+          // Don't clear tab-specific state - just leave it as is
         }
       }
     } catch (error) {
@@ -541,15 +613,16 @@ export default function Dashboard() {
     
     if (!zoomConnection?.nango_connection_id) {
       console.log('No active Zoom connection found - early return');
-      setRegistrants([]);
+      setAttendeesList([]);
+      setNoShowsList([]);
       return;
     }
 
-    console.log('Making API call to fetch registrants...');
+    console.log('Making API call to fetch registrant status...');
     setIsLoadingRegistrants(true);
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/zoom-registrants?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
+        `https://app.greysolve.com/webhook/zoom-meeting-registrant-status?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -558,44 +631,91 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Registrants API response:', data);
+        console.log('Registrant status API response:', data);
         
-        // Handle different response formats
-        let registrantsList: any[] = [];
-        if (Array.isArray(data)) {
-          // Response is array: [{ registrants: [...], page_size, ... }]
+        // Parse the new response format: [{ registrants: [], attendees: [], no_shows: [] }]
+        let attendees: any[] = [];
+        let noShows: any[] = [];
+        
+        if (Array.isArray(data) && data.length > 0) {
           const responseData = data[0];
-          if (responseData?.registrants && Array.isArray(responseData.registrants)) {
-            registrantsList = responseData.registrants;
-          } else {
-            // If array doesn't have registrants property, assume it's the registrants array itself
-            registrantsList = data;
+          
+          // Extract attendees list
+          if (responseData?.attendees && Array.isArray(responseData.attendees)) {
+            // Normalize attendees: split 'name' into first_name/last_name for consistency
+            attendees = responseData.attendees.map((attendee: any) => {
+              const nameParts = (attendee.name || '').trim().split(/\s+/);
+              return {
+                ...attendee,
+                first_name: nameParts[0] || '',
+                last_name: nameParts.slice(1).join(' ') || '',
+              };
+            });
           }
-        } else if (data?.registrants && Array.isArray(data.registrants)) {
-          registrantsList = data.registrants;
-        } else if (data?.data && Array.isArray(data.data)) {
-          registrantsList = data.data;
-        } else if (data && typeof data === 'object') {
-          // If it's a single object, wrap it in an array
-          registrantsList = [data];
+          
+          // Extract no_shows list
+          if (responseData?.no_shows && Array.isArray(responseData.no_shows)) {
+            noShows = responseData.no_shows;
+          }
         }
         
-        console.log('Parsed registrants list:', registrantsList);
-        if (registrantsList.length > 0) {
-          console.log('First registrant structure:', registrantsList[0]);
-          console.log('Available fields:', Object.keys(registrantsList[0]));
+        console.log('Parsed attendees list:', attendees);
+        console.log('Parsed no_shows list:', noShows);
+        
+        if (attendees.length > 0) {
+          console.log('First attendee structure:', attendees[0]);
+          console.log('Available attendee fields:', Object.keys(attendees[0]));
         }
-        setRegistrants(registrantsList);
+        if (noShows.length > 0) {
+          console.log('First no-show structure:', noShows[0]);
+          console.log('Available no-show fields:', Object.keys(noShows[0]));
+        }
+        
+        setAttendeesList(attendees);
+        setNoShowsList(noShows);
       } else {
         const errorText = await response.text();
-        console.error('Failed to fetch registrants:', response.status, errorText);
-        setRegistrants([]);
+        console.error('Failed to fetch registrant status:', response.status, errorText);
+        setAttendeesList([]);
+        setNoShowsList([]);
       }
     } catch (error) {
-      console.error('Error fetching registrants:', error);
-      setRegistrants([]);
+      console.error('Error fetching registrant status:', error);
+      setAttendeesList([]);
+      setNoShowsList([]);
     } finally {
       setIsLoadingRegistrants(false);
+    }
+  };
+
+  const loadTemplateForTab = async (templateId: string, tab: 'attendees' | 'noShows') => {
+    if (!userData?.userId) return;
+
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${templateId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const template = await response.json();
+        if (tab === 'attendees') {
+          setAttendeesCurrentTemplate(template);
+          setAttendeesTemplateName(template.name || '');
+          setAttendeesEmailSubject(template.subject || '');
+          setAttendeesEmail(template.body || '');
+        } else {
+          setNoShowsCurrentTemplate(template);
+          setNoShowsTemplateName(template.name || '');
+          setNoShowsEmailSubject(template.subject || '');
+          setNoShowsEmail(template.body || '');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading template:', error);
     }
   };
 
@@ -669,26 +789,29 @@ export default function Dashboard() {
     setSaveError('');
 
     try {
-      let templateId = selectedTemplateId;
+      let templateId = getSelectedTemplateId();
       const templateType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
       const emailBody = activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
+      const currentSubject = getEmailSubject();
+      const currentName = getTemplateName();
+      const currentTemplateData = getCurrentTemplate();
 
-      console.log('Saving template:', { selectedTemplateId, templateType, hasSubject: !!emailSubject, hasBody: !!emailBody });
+      console.log('Saving template:', { selectedTemplateId: templateId, templateType, hasSubject: !!currentSubject, hasBody: !!emailBody });
 
       // If template is selected, update it
-      if (selectedTemplateId && currentTemplate) {
+      if (templateId && currentTemplateData) {
         const updatedTemplate = {
           user_id: userData.userId,
           template_type: templateType,
-          subject: emailSubject,
+          subject: currentSubject,
           body: emailBody,
-          name: templateName || currentTemplate.name || emailSubject || `${templateType} template`,
+          name: currentName || currentTemplateData.name || currentSubject || `${templateType} template`,
         };
 
         console.log('Updating template:', updatedTemplate);
 
         const updateResponse = await fetch(
-          `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${selectedTemplateId}`,
+          `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${templateId}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -704,7 +827,7 @@ export default function Dashboard() {
         console.log('Template updated successfully');
       } else {
         // No template selected - create a new one
-        if (!templateName) {
+        if (!currentName) {
           setSaveError('Please provide a template name');
           setIsSaving(false);
           return;
@@ -713,9 +836,9 @@ export default function Dashboard() {
         const newTemplate = {
           user_id: userData.userId,
           template_type: templateType,
-          subject: emailSubject,
+          subject: currentSubject,
           body: emailBody,
-          name: templateName,
+          name: currentName,
         };
 
         console.log('Creating new template:', newTemplate);
@@ -786,15 +909,10 @@ export default function Dashboard() {
     return activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
   };
 
-  // Refetch templates when tab changes
+  // Refetch templates when tab changes (but don't clear tab-specific state)
   useEffect(() => {
     if (userData?.userId && hasSubscription) {
       fetchTemplates();
-      // Reset template selection when tab changes
-      setSelectedTemplateId('');
-      setCurrentTemplate(null);
-      setTemplateName('');
-      setEmailSubject('');
     }
   }, [activeTab]);
 
@@ -1018,7 +1136,7 @@ export default function Dashboard() {
                     {/* Create Sending Package Button */}
                     <button
                       onClick={handleCreateSendingPackage}
-                      disabled={!selectedMeeting || !selectedTemplateId || isCreatingPackage || registrants.length === 0}
+                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage || getCurrentRegistrantsList().length === 0}
                       className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isCreatingPackage && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -1077,7 +1195,7 @@ export default function Dashboard() {
                   </label>
                   <input
                     type="text"
-                    value={templateName}
+                    value={getTemplateName()}
                     onChange={(e) => setTemplateName(e.target.value)}
                     placeholder="Enter template name..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1091,7 +1209,7 @@ export default function Dashboard() {
                     Template
                   </label>
                   <select
-                    value={selectedTemplateId}
+                    value={getSelectedTemplateId()}
                     onChange={(e) => handleTemplateSelect(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     disabled={!selectedMeeting}
@@ -1114,7 +1232,7 @@ export default function Dashboard() {
                   </label>
                   <input
                     type="text"
-                    value={emailSubject}
+                    value={getEmailSubject()}
                     onChange={(e) => setEmailSubject(e.target.value)}
                     placeholder="Email subject..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1131,6 +1249,7 @@ export default function Dashboard() {
                   ) : (
                     <div onDrop={handleEditorDrop} onDragOver={(e) => e.preventDefault()}>
                       <ReactQuill
+                        key={activeTab}
                         ref={quillRef}
                         theme="snow"
                         value={getCurrentEmailContent()}
@@ -1224,16 +1343,17 @@ export default function Dashboard() {
                     <select
                       value={selectedRegistrantForPreview?.id || ''}
                       onChange={(e) => {
-                        const registrant = registrants.find((r: any) => r.id === e.target.value);
+                        const currentList = getCurrentRegistrantsList();
+                        const registrant = currentList.find((r: any) => r.id === e.target.value);
                         handleRegistrantSelect(registrant);
                       }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={registrants.length === 0}
+                      disabled={getCurrentRegistrantsList().length === 0}
                     >
                       <option value="">
-                        {registrants.length === 0 ? 'No registrants found' : 'Choose a registrant...'}
+                        {getCurrentRegistrantsList().length === 0 ? 'No registrants found' : 'Choose a registrant...'}
                       </option>
-                      {registrants.map((registrant: any) => (
+                      {getCurrentRegistrantsList().map((registrant: any) => (
                         <option key={registrant.id} value={registrant.id}>
                           {registrant.first_name} {registrant.last_name} ({registrant.email})
                         </option>
