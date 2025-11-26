@@ -258,12 +258,6 @@ export default function Dashboard() {
       return;
     }
 
-    const currentList = getCurrentRegistrantsList();
-    if (currentList.length === 0) {
-      setSaveError('No registrants found for this meeting');
-      return;
-    }
-
     setIsCreatingPackage(true);
     setSaveError('');
 
@@ -1136,7 +1130,7 @@ export default function Dashboard() {
                     {/* Create Sending Package Button */}
                     <button
                       onClick={handleCreateSendingPackage}
-                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage || getCurrentRegistrantsList().length === 0}
+                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage}
                       className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isCreatingPackage && <Loader2 className="w-4 h-4 animate-spin" />}
