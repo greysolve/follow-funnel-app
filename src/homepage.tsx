@@ -209,6 +209,32 @@ export default function ZoomFollowUpLanding() {
           </button>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Video className="w-6 h-6 text-blue-600" />
+              <span className="text-lg font-semibold text-gray-900">FollowFunnel</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-600">
+              <button
+                onClick={() => navigate('/privacy')}
+                className="hover:text-gray-900 transition"
+              >
+                Privacy Policy
+              </button>
+              <button
+                onClick={() => navigate('/terms')}
+                className="hover:text-gray-900 transition"
+              >
+                Terms of Service
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

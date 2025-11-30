@@ -301,7 +301,7 @@ export default function Dashboard() {
       const payload = {
         user_id: userData.userId,
         meeting_id: selectedMeeting,
-        meeting_topic: meeting.topic || '',
+        meeting_title: meeting.topic || '',
         recipient_type: recipientType,
         template_id: getSelectedTemplateId(),
         recording_url: recordingUrl,
