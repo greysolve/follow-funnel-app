@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [delayAmount, setDelayAmount] = useState<number>(5);
   const [delayUnit, setDelayUnit] = useState<string>('minutes');
   const [isCreatingPackage, setIsCreatingPackage] = useState(false);
+  const [recordingUrl, setRecordingUrl] = useState<string>('');
   const quillRef = useRef<any>(null);
 
   // Variable definitions
@@ -168,8 +169,12 @@ export default function Dashboard() {
     if (!registrant) return content;
     
     // Get the selected meeting to access meeting topic
-    const meeting = meetings.find((m: any) => (m.id || m.uuid) === selectedMeeting);
+    const meeting = meetings.find((m: any) => {
+      const meetingId = m.id || m.uuid;
+      return meetingId === selectedMeeting || meetingId?.toString() === selectedMeeting?.toString();
+    });
     const topic = meetingTopic || meeting?.topic || '';
+    const recordingLink = recordingUrl || meeting?.recording_url || '';
     
     // Map of variable placeholders to registrant fields or meeting data
     const variableMap: { [key: string]: { field?: string, label: string, value?: string } } = {
@@ -180,7 +185,7 @@ export default function Dashboard() {
       '{{job_title}}': { field: 'job_title', label: 'job_title' },
       '{{city}}': { field: 'city', label: 'city' },
       '{{country}}': { field: 'country', label: 'country' },
-      '{{recording_link}}': { field: 'recording_link', label: 'recording_link' },
+      '{{recording_link}}': { label: 'recording_link', value: recordingLink },
       '{{meeting_title}}': { label: 'meeting_title', value: topic },
     };
 
@@ -287,8 +292,8 @@ export default function Dashboard() {
       // Determine recipient type from active tab
       const recipientType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
 
-      // Get recording URL if available (from meeting or registrant data)
-      const recordingUrl = meeting.recording_url || null;
+      // Get recording URL if available (from state or meeting data)
+      const recordingUrlForPackage = recordingUrl || meeting.recording_url || null;
 
       // Include all registrant fields in recipient_list for maximum flexibility
       // This allows the backend to use any variables from the template without
@@ -304,7 +309,7 @@ export default function Dashboard() {
         meeting_title: meeting.topic || '',
         recipient_type: recipientType,
         template_id: getSelectedTemplateId(),
-        recording_url: recordingUrl,
+        recording_url: recordingUrlForPackage,
         recipient_list: recipientList,
         meeting_end_time: meetingEndTime,
         delay_minutes: delayMinutes,
@@ -357,6 +362,7 @@ export default function Dashboard() {
     if (selectedMeeting && connections.length > 0) {
       fetchAssignment();
       fetchRegistrants();
+      fetchRecording();
     } else if (!selectedMeeting) {
       setAssignment(null);
       setAttendeesSelectedTemplateId('');
@@ -371,6 +377,7 @@ export default function Dashboard() {
       setNoShowsEmail('');
       setAttendeesList([]);
       setNoShowsList([]);
+      setRecordingUrl('');
     }
   }, [selectedMeeting, connections]);
 
@@ -682,6 +689,69 @@ export default function Dashboard() {
     }
   };
 
+  const fetchRecording = async () => {
+    if (!selectedMeeting) {
+      setRecordingUrl('');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://app.greysolve.com/webhook/zoom-meeting-recordings?meetingId=${selectedMeeting}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Recording API response:', data);
+        
+        // Handle different response formats
+        let recordings: any[] = [];
+        if (Array.isArray(data)) {
+          recordings = data;
+        } else if (data?.recordings && Array.isArray(data.recordings)) {
+          recordings = data.recordings;
+        } else if (data && !Array.isArray(data) && typeof data === 'object') {
+          recordings = [data];
+        }
+        
+        // Get most recent recording (sorted by created_at or recording_start_time)
+        if (recordings.length > 0) {
+          const sortedRecordings = [...recordings].sort((a: any, b: any) => {
+            try {
+              const dateA = new Date(a.created_at || a.recording_start_time || 0);
+              const dateB = new Date(b.created_at || b.recording_start_time || 0);
+              return dateB.getTime() - dateA.getTime();
+            } catch (e) {
+              return 0;
+            }
+          });
+          
+          const mostRecent = sortedRecordings[0];
+          if (mostRecent) {
+            // Use play_url, download_url, or share_url (depending on API response format)
+            const url = mostRecent.play_url || mostRecent.download_url || mostRecent.share_url || mostRecent.recording_url || '';
+            setRecordingUrl(url);
+            console.log('Set recording URL:', url);
+          } else {
+            setRecordingUrl('');
+          }
+        } else {
+          setRecordingUrl('');
+        }
+      } else {
+        // No recording found or error - set empty
+        setRecordingUrl('');
+      }
+    } catch (error) {
+      console.error('Error fetching recording:', error);
+      setRecordingUrl('');
+    }
+  };
+
   const loadTemplateForTab = async (templateId: string, tab: 'attendees' | 'noShows') => {
     if (!userData?.userId) return;
 
@@ -901,6 +971,16 @@ export default function Dashboard() {
 
   const getCurrentEmailContent = () => {
     return activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
+  };
+
+  const templateUsesRecordingLink = (): boolean => {
+    const currentContent = getCurrentEmailContent();
+    const currentSubject = getEmailSubject();
+    return currentContent.includes('{{recording_link}}') || currentSubject.includes('{{recording_link}}');
+  };
+
+  const getDelayInMinutes = (): number => {
+    return calculateDelayMinutes(delayAmount, delayUnit);
   };
 
   // Refetch templates when tab changes (but don't clear tab-specific state)
@@ -1126,6 +1206,18 @@ export default function Dashboard() {
                     </div>
 
                     <p className="text-xs text-gray-500 mt-2">Send after meeting ends</p>
+                    
+                    {/* Recording Link Delay Suggestion */}
+                    {templateUsesRecordingLink() && getDelayInMinutes() < 30 && (
+                      <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-xs text-amber-800">
+                          <strong>💡 Tip:</strong> Recording links typically become available 15-30 minutes after a meeting ends. 
+                          {getDelayInMinutes() < 20 && (
+                            <span className="block mt-1">Consider increasing your delay to at least 20-30 minutes to ensure recording links are included.</span>
+                          )}
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Create Sending Package Button */}
                     <button
