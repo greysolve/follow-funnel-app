@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [saveError, setSaveError] = useState<string>('');
   const [attendeesList, setAttendeesList] = useState<any[]>([]);
   const [noShowsList, setNoShowsList] = useState<any[]>([]);
+  const [allRegistrantsForPreview, setAllRegistrantsForPreview] = useState<any[]>([]);
   const [isLoadingRegistrants, setIsLoadingRegistrants] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedRegistrantForPreview, setSelectedRegistrantForPreview] = useState<any>(null);
@@ -377,6 +378,7 @@ export default function Dashboard() {
       setNoShowsEmail('');
       setAttendeesList([]);
       setNoShowsList([]);
+      setAllRegistrantsForPreview([]);
       setRecordingUrl('');
     }
   }, [selectedMeeting, connections]);
@@ -616,6 +618,7 @@ export default function Dashboard() {
       console.log('No active Zoom connection found - early return');
       setAttendeesList([]);
       setNoShowsList([]);
+      setAllRegistrantsForPreview([]);
       return;
     }
 
@@ -637,9 +640,22 @@ export default function Dashboard() {
         // Parse the new response format: [{ registrants: [], attendees: [], no_shows: [] }]
         let attendees: any[] = [];
         let noShows: any[] = [];
+        let allRegistrants: any[] = [];
         
         if (Array.isArray(data) && data.length > 0) {
           const responseData = data[0];
+          
+          // Extract registrants list (complete list for preview)
+          if (responseData?.registrants && Array.isArray(responseData.registrants)) {
+            allRegistrants = responseData.registrants.map((registrant: any) => {
+              const nameParts = (registrant.name || '').trim().split(/\s+/);
+              return {
+                ...registrant,
+                first_name: nameParts[0] || '',
+                last_name: nameParts.slice(1).join(' ') || '',
+              };
+            });
+          }
           
           // Extract attendees list
           if (responseData?.attendees && Array.isArray(responseData.attendees)) {
@@ -662,6 +678,7 @@ export default function Dashboard() {
         
         console.log('Parsed attendees list:', attendees);
         console.log('Parsed no_shows list:', noShows);
+        console.log('Parsed all registrants list (for preview):', allRegistrants);
         
         if (attendees.length > 0) {
           console.log('First attendee structure:', attendees[0]);
@@ -674,16 +691,19 @@ export default function Dashboard() {
         
         setAttendeesList(attendees);
         setNoShowsList(noShows);
+        setAllRegistrantsForPreview(allRegistrants);
       } else {
         const errorText = await response.text();
         console.error('Failed to fetch registrant status:', response.status, errorText);
         setAttendeesList([]);
         setNoShowsList([]);
+        setAllRegistrantsForPreview([]);
       }
     } catch (error) {
       console.error('Error fetching registrant status:', error);
       setAttendeesList([]);
       setNoShowsList([]);
+      setAllRegistrantsForPreview([]);
     } finally {
       setIsLoadingRegistrants(false);
     }
@@ -1429,17 +1449,16 @@ export default function Dashboard() {
                     <select
                       value={selectedRegistrantForPreview?.id || ''}
                       onChange={(e) => {
-                        const currentList = getCurrentRegistrantsList();
-                        const registrant = currentList.find((r: any) => r.id === e.target.value);
+                        const registrant = allRegistrantsForPreview.find((r: any) => r.id === e.target.value);
                         handleRegistrantSelect(registrant);
                       }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={getCurrentRegistrantsList().length === 0}
+                      disabled={allRegistrantsForPreview.length === 0}
                     >
                       <option value="">
-                        {getCurrentRegistrantsList().length === 0 ? 'No registrants found' : 'Choose a registrant...'}
+                        {allRegistrantsForPreview.length === 0 ? 'No registrants found' : 'Choose a registrant...'}
                       </option>
-                      {getCurrentRegistrantsList().map((registrant: any) => (
+                      {allRegistrantsForPreview.map((registrant: any) => (
                         <option key={registrant.id} value={registrant.id}>
                           {registrant.first_name} {registrant.last_name} ({registrant.email})
                         </option>
