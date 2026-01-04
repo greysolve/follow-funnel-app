@@ -255,6 +255,51 @@ export default function Dashboard() {
     const startTime = new Date(meeting.start_time);
     const durationMinutes = meeting.duration;
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+    
+    // Convert to meeting's timezone if provided, otherwise use UTC
+    if (meeting.timezone) {
+      // Format as YYYY-MM-DD HH:mm:ss in the meeting's timezone
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: meeting.timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      
+      const parts = formatter.formatToParts(endTime);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      const second = parts.find(p => p.type === 'second')?.value;
+      
+      // Calculate timezone offset for the meeting timezone at this specific date/time
+      // Create a formatter to get the offset
+      const tzFormatter = new Intl.DateTimeFormat('en', {
+        timeZone: meeting.timezone,
+        timeZoneName: 'longOffset',
+      });
+      
+      // Get offset string (e.g., "GMT-08:00")
+      const tzOffset = tzFormatter.formatToParts(endTime).find(p => p.type === 'timeZoneName')?.value || 'GMT+00:00';
+      
+      // Extract offset from format like "GMT-08:00" or "GMT+05:30"
+      const offsetMatch = tzOffset.match(/GMT([+-])(\d{1,2}):(\d{2})/);
+      if (offsetMatch) {
+        const offsetStr = `${offsetMatch[1]}${offsetMatch[2].padStart(2, '0')}:${offsetMatch[3]}`;
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}${offsetStr}`;
+      }
+      
+      // Fallback if offset parsing fails
+      return `${year}-${month}-${day} ${hour}:${minute}:${second}+00:00`;
+    }
+    
+    // Fallback to UTC ISO string if no timezone
     return endTime.toISOString();
   };
 
@@ -637,25 +682,12 @@ export default function Dashboard() {
         const data = await response.json();
         console.log('Registrant status API response:', data);
         
-        // Parse the new response format: [{ registrants: [], attendees: [], no_shows: [] }]
+        // Parse the new response format: [{ attendees: [], no_shows: [] }]
         let attendees: any[] = [];
         let noShows: any[] = [];
-        let allRegistrants: any[] = [];
         
         if (Array.isArray(data) && data.length > 0) {
           const responseData = data[0];
-          
-          // Extract registrants list (complete list for preview)
-          if (responseData?.registrants && Array.isArray(responseData.registrants)) {
-            allRegistrants = responseData.registrants.map((registrant: any) => {
-              const nameParts = (registrant.name || '').trim().split(/\s+/);
-              return {
-                ...registrant,
-                first_name: nameParts[0] || '',
-                last_name: nameParts.slice(1).join(' ') || '',
-              };
-            });
-          }
           
           // Extract attendees list
           if (responseData?.attendees && Array.isArray(responseData.attendees)) {
@@ -675,6 +707,9 @@ export default function Dashboard() {
             noShows = responseData.no_shows;
           }
         }
+        
+        // Combine attendees and no_shows for preview
+        const allRegistrants = [...attendees, ...noShows];
         
         console.log('Parsed attendees list:', attendees);
         console.log('Parsed no_shows list:', noShows);
