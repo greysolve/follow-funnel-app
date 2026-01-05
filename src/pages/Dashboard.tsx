@@ -362,7 +362,7 @@ export default function Dashboard() {
         send_status: 'pending',
       };
 
-      const url = `https://app.greysolve.com/webhook/outreach-sending-jobs`;
+      const url = `/api/outreach-sending-jobs`;
       console.log('Creating sending package - URL:', url);
       console.log('Creating sending package - Payload:', payload);
 
@@ -466,7 +466,7 @@ export default function Dashboard() {
   const checkConnections = async (userId: string): Promise<boolean> => {
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/check-connection?userId=${userId}`,
+        `/api/check-connection?userId=${userId}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -505,7 +505,7 @@ export default function Dashboard() {
   const checkSubscription = async (userId: string) => {
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/check-subscription?userId=${userId}`,
+        `/api/check-subscription?userId=${userId}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -549,7 +549,7 @@ export default function Dashboard() {
     setIsLoadingMeetings(true);
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/zoom-meeting-list?userId=${userData.userId}&connectionId=${zoomConnection.nango_connection_id}&provider=${zoomConnection.provider}`,
+        `/api/zoom-meeting-list?userId=${userData.userId}&connectionId=${zoomConnection.nango_connection_id}&provider=${zoomConnection.provider}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -587,7 +587,7 @@ export default function Dashboard() {
       // Get template_type based on active tab (attendees or no_shows)
       const templateType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
       const response = await fetch(
-        `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&template_type=${templateType}`,
+        `/api/templates?userId=${userData.userId}&template_type=${templateType}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -611,7 +611,7 @@ export default function Dashboard() {
 
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/meeting-assignments/${selectedMeeting}?userId=${userData.userId}`,
+        `/api/meeting-assignments/${selectedMeeting}?userId=${userData.userId}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -671,7 +671,7 @@ export default function Dashboard() {
     setIsLoadingRegistrants(true);
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/zoom-meeting-registrant-status?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
+        `/api/zoom-meeting-registrant-status?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -752,7 +752,7 @@ export default function Dashboard() {
 
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/zoom-meeting-recordings?meetingId=${selectedMeeting}`,
+        `/api/zoom-meeting-recordings?meetingId=${selectedMeeting}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -812,7 +812,7 @@ export default function Dashboard() {
 
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${templateId}`,
+        `/api/templates?userId=${userData.userId}&templateId=${templateId}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -843,7 +843,7 @@ export default function Dashboard() {
 
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${templateId}`,
+        `/api/templates?userId=${userData.userId}&templateId=${templateId}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -930,7 +930,7 @@ export default function Dashboard() {
         console.log('Updating template:', updatedTemplate);
 
         const updateResponse = await fetch(
-          `https://app.greysolve.com/webhook/templates?userId=${userData.userId}&templateId=${templateId}`,
+          `/api/templates?userId=${userData.userId}&templateId=${templateId}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -963,7 +963,7 @@ export default function Dashboard() {
         console.log('Creating new template:', newTemplate);
 
         const createResponse = await fetch(
-          `https://app.greysolve.com/webhook/templates`,
+          `/api/templates`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -987,7 +987,7 @@ export default function Dashboard() {
       console.log('Creating/updating assignment:', { user_id: userData.userId, meeting_id: selectedMeeting, template_id: templateId, template_type: templateType });
 
       const assignmentResponse = await fetch(
-        `https://app.greysolve.com/webhook/meeting-assignments?userId=${userData.userId}&meetingId=${selectedMeeting}&templateType=${templateType}`,
+        `/api/meeting-assignments?userId=${userData.userId}&meetingId=${selectedMeeting}&templateType=${templateType}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

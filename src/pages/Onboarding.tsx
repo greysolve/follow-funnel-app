@@ -95,7 +95,7 @@ export default function Onboarding() {
     }
 
     try {
-      const url = `https://app.greysolve.com/webhook/check-connection?userId=${userData.userId}`;
+      const url = `/api/check-connection?userId=${userData.userId}`;
       console.log('Fetching connections from:', url);
       const response = await fetch(url, {
         method: 'GET',
@@ -138,7 +138,7 @@ export default function Onboarding() {
     
     try {
       const response = await fetch(
-        `https://app.greysolve.com/webhook/check-subscription?userId=${userData.userId}`,
+        `/api/check-subscription?userId=${userData.userId}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -194,7 +194,7 @@ export default function Onboarding() {
       };
       console.log('Connecting Zoom with:', requestBody);
 
-      const response = await fetch('https://app.greysolve.com/webhook/create-zoom-auth', {
+      const response = await fetch('/api/create-zoom-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -290,7 +290,7 @@ export default function Onboarding() {
       };
       console.log('Connecting Gmail with:', requestBody);
 
-      const response = await fetch('https://app.greysolve.com/webhook/create-gmail-auth', {
+      const response = await fetch('/api/create-gmail-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
