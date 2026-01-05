@@ -1169,7 +1169,14 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-gray-900">Select Meeting</h2>
                   <button
-                    onClick={fetchMeetings}
+                    onClick={() => {
+                      fetchMeetings();
+                      if (selectedMeeting && connections.length > 0) {
+                        fetchAssignment();
+                        fetchRegistrants();
+                        fetchRecording();
+                      }
+                    }}
                     disabled={isLoadingMeetings}
                     className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
                     title="Refresh meetings"
