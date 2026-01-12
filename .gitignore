@@ -34,3 +34,8 @@ trash.pile.json
 
 #md
 *.md
+.vercel
+.env*.local
+
+#special files
+followfunnel-zoom-test-plan*

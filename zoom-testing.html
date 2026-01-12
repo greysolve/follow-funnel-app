@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FollowFunnel - Zoom Integration Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+        }
+        
+        header {
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            color: #1e293b;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            font-size: 18px;
+        }
+        
+        section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #2563eb;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        h3 {
+            color: #334155;
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+        }
+        
+        ol, ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+        }
+        
+        .screenshot {
+            width: 100%;
+            max-width: 700px;
+            height: 300px;
+            background: #e2e8f0;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        .variables-box {
+            background: #f1f5f9;
+            border-left: 4px solid #2563eb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .variables-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #dc2626;
+        }
+        
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .note strong {
+            color: #92400e;
+        }
+        
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+        }
+        
+        footer a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FollowFunnel for Zoom</h1>
+            <p class="subtitle">Documentation for adding, using, and removing the app</p>
+        </header>
+
+        <!-- SECTION 1: Adding the App -->
+        <section id="adding">
+            <h2>Adding the App</h2>
+            
+            <p>Follow these steps to add FollowFunnel to your Zoom account:</p>
+            
+            <ol>
+                <li><strong>Navigate to signup:</strong> Go to <a href="https://www.followfunnel.app/signup">https://www.followfunnel.app/signup</a></li>
+                <div class="screenshot">[Screenshot: Signup page]</div>
+                
+                <li><strong>Create your account:</strong> Enter your First Name, Last Name, Email, and Password, then click "Create account"</li>
+                
+                <li><strong>Complete onboarding:</strong> You'll be redirected to the onboarding page where you'll connect both Zoom and Gmail</li>
+                <div class="screenshot">[Screenshot: Onboarding page showing Zoom and Gmail connection options]</div>
+                
+                <li><strong>Connect Zoom:</strong> Click "Connect" for Zoom and authorize the requested permissions</li>
+                <div class="screenshot">[Screenshot: Zoom OAuth authorization screen]</div>
+                
+                <li><strong>Connect Gmail:</strong> Click "Connect" for Gmail and authorize the requested permissions</li>
+                <div class="screenshot">[Screenshot: Gmail OAuth authorization screen]</div>
+                
+                <li><strong>Verify connections:</strong> Confirm both Zoom and Gmail show as successfully connected</li>
+            </ol>
+
+            <div class="note">
+                <strong>Troubleshooting:</strong> If authorization fails, ensure pop-ups are enabled in your browser and that you're logged into the correct Zoom and Gmail accounts.
+            </div>
+        </section>
+
+        <!-- SECTION 2: Using the App -->
+        <section id="usage">
+            <h2>Using the App</h2>
+            
+            <p>Once connected, you can configure automated follow-ups for your Zoom meetings:</p>
+
+            <h3>Step 1: Access Your Dashboard</h3>
+            <ol>
+                <li>After completing onboarding, click "Go to Dashboard"</li>
+                <li>You'll see your main workspace for managing follow-ups</li>
+            </ol>
+            <div class="screenshot">[Screenshot: Dashboard - empty state]</div>
+
+            <h3>Step 2: Select a Meeting</h3>
+            <ol>
+                <li>Use the dropdown menu to select which Zoom meeting you want to configure follow-ups for</li>
+                <li>Meeting data will load automatically once selected</li>
+            </ol>
+            <div class="screenshot">[Screenshot: Dashboard with meeting selected]</div>
+
+            <h3>Step 3: Configure Attendees Template</h3>
+            <ol>
+                <li>Click the <strong>"Attendees"</strong> tab</li>
+                <li>Enter a template name (e.g., "Thank You Email")</li>
+                <li>Set the email subject line (you can use variables like <code>{{Meeting Title}}</code>)</li>
+                <li>Compose your email body using the template editor</li>
+                <li>Insert merge fields by clicking on available variables</li>
+                <li>Set when to send: enter delay amount and select time unit (minutes/hours/days after meeting ends)</li>
+            </ol>
+            <div class="screenshot">[Screenshot: Attendees tab with template editor]</div>
+
+            <h3>Step 4: Configure No-Shows Template</h3>
+            <ol>
+                <li>Click the <strong>"No Shows"</strong> tab</li>
+                <li>Repeat the template configuration process for registrants who didn't attend</li>
+                <li>Use different messaging appropriate for no-shows (e.g., sharing the recording)</li>
+            </ol>
+            <div class="screenshot">[Screenshot: No Shows tab configured]</div>
+
+            <h3>Step 5: Create Sending Package</h3>
+            <ol>
+                <li>Review your configurations for both tabs</li>
+                <li>Click <strong>"Create Sending Package"</strong></li>
+                <li>Your follow-up sequence is now active</li>
+            </ol>
+            <div class="screenshot">[Screenshot: Success confirmation after creating sending package]</div>
+
+            <h3>What Happens Next</h3>
+            <p>After your meeting ends:</p>
+            <ul>
+                <li>FollowFunnel waits for the delay you specified</li>
+                <li>Emails are automatically sent to attendees and no-shows using your configured templates</li>
+                <li>Merge fields are replaced with actual attendee data</li>
+                <li>Emails are sent from your connected Gmail account</li>
+            </ul>
+
+            <div class="variables-box">
+                <h3>Available Template Variables</h3>
+                <p>You can insert these merge fields into your email templates:</p>
+                <ul>
+                    <li><code>{{First Name}}</code> - Attendee's first name</li>
+                    <li><code>{{Last Name}}</code> - Attendee's last name</li>
+                    <li><code>{{Email}}</code> - Attendee's email address</li>
+                    <li><code>{{Company}}</code> - Attendee's company name</li>
+                    <li><code>{{Job Title}}</code> - Attendee's job title</li>
+                    <li><code>{{City}}</code> - Attendee's city</li>
+                    <li><code>{{Country}}</code> - Attendee's country</li>
+                    <li><code>{{Recording Link}}</code> - Link to meeting recording</li>
+                    <li><code>{{Meeting Title}}</code> - Title of the Zoom meeting</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Removing the App -->
+        <section id="removing">
+            <h2>Removing the App</h2>
+            
+            <p>You can remove FollowFunnel from your Zoom account at any time:</p>
+
+            <h3>Standard Zoom Removal Process</h3>
+            <ol>
+                <li>Sign in to <a href="https://marketplace.zoom.us" target="_blank">Zoom App Marketplace</a></li>
+                <li>In the top right corner, click <strong>Manage</strong></li>
+                <li>On the left side, click <strong>Added Apps</strong></li>
+                <li>Find "Follow Funnel Dev" in your list of apps</li>
+                <li>Click <strong>Remove</strong></li>
+                <li>Optionally select a reason for removal</li>
+                <li>Click <strong>Remove</strong> to confirm</li>
+            </ol>
+
+            <h3>What Happens When You Remove the App</h3>
+            <ul>
+                <li>FollowFunnel will no longer have access to your Zoom account</li>
+                <li>Scheduled follow-ups for future meetings will not be sent</li>
+                <li>Your FollowFunnel account and templates remain active</li>
+            </ul>
+
+            <h3>Deleting Your Account</h3>
+            <p>If you want to completely delete your FollowFunnel account and all associated data:</p>
+            <ul>
+                <li>Contact our support team at <a href="mailto:support@followfunnel.app">support@followfunnel.app</a></li>
+                <li>Include "Account Deletion Request" in the subject line</li>
+                <li>We will process your request within 48 hours</li>
+            </ul>
+
+            <div class="note">
+                <strong>Note:</strong> Account deletion is permanent and cannot be undone. All templates and configurations will be permanently deleted.
+            </div>
+        </section>
+
+        <footer>
+            <p><strong>Need Help?</strong></p>
+            <p>Visit our <a href="https://follow-funnel-for-zoom.nolt.io" target="_blank">Support Portal</a> or email <a href="mailto:support@followfunnel.app">support@followfunnel.app</a></p>
+            <p style="margin-top: 20px; font-size: 14px;">&copy; 2025 FollowFunnel. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
