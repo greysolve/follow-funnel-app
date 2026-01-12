@@ -125,7 +125,7 @@ export default function ZoomDocumentation() {
           <ol className="list-decimal pl-6 space-y-2 mb-4">
             <li>Click the <strong>"Attendees"</strong> tab</li>
             <li>Enter a template name (e.g., "Thank You Email")</li>
-            <li>Set the email subject line (you can use variables like <code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Meeting Title}}</code>)</li>
+            <li>Set the email subject line (you can use variables like <code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Meeting Title{'}}'}</code>)</li>
             <li>Compose your email body using the template editor</li>
             <li>Insert merge fields by clicking on available variables</li>
             <li>Set when to send: enter delay amount and select time unit (minutes/hours/days after meeting ends)</li>
@@ -179,15 +179,15 @@ export default function ZoomDocumentation() {
             <h3 className="text-xl font-semibold text-gray-900 mb-3">Available Template Variables</h3>
             <p className="text-gray-700 mb-3">You can insert these merge fields into your email templates:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{First Name}}</code> - Attendee's first name</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Last Name}}</code> - Attendee's last name</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Email}}</code> - Attendee's email address</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Company}}</code> - Attendee's company name</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Job Title}}</code> - Attendee's job title</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{City}}</code> - Attendee's city</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Country}}</code> - Attendee's country</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Recording Link}}</code> - Link to meeting recording</li>
-              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{{Meeting Title}}</code> - Title of the Zoom meeting</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}First Name{'}}'}</code> - Attendee's first name</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Last Name{'}}'}</code> - Attendee's last name</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Email{'}}'}</code> - Attendee's email address</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Company{'}}'}</code> - Attendee's company name</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Job Title{'}}'}</code> - Attendee's job title</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}City{'}}'}</code> - Attendee's city</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Country{'}}'}</code> - Attendee's country</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Recording Link{'}}'}</code> - Link to meeting recording</li>
+              <li><code className="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono text-sm">{'{{'}Meeting Title{'}}'}</code> - Title of the Zoom meeting</li>
             </ul>
           </div>
         </section>
