@@ -820,17 +820,22 @@ export default function Dashboard() {
       );
 
       if (response.ok) {
-        const template = await response.json();
-        if (tab === 'attendees') {
-          setAttendeesCurrentTemplate(template);
-          setAttendeesTemplateName(template.name || '');
-          setAttendeesEmailSubject(template.subject || '');
-          setAttendeesEmail(template.body || '');
-        } else {
-          setNoShowsCurrentTemplate(template);
-          setNoShowsTemplateName(template.name || '');
-          setNoShowsEmailSubject(template.subject || '');
-          setNoShowsEmail(template.body || '');
+        const data = await response.json();
+        // Handle array response (consistent with fetchTemplates pattern)
+        const template = Array.isArray(data) ? data[0] : data;
+        
+        if (template) {
+          if (tab === 'attendees') {
+            setAttendeesCurrentTemplate(template);
+            setAttendeesTemplateName(template.name || '');
+            setAttendeesEmailSubject(template.subject || '');
+            setAttendeesEmail(template.body || '');
+          } else {
+            setNoShowsCurrentTemplate(template);
+            setNoShowsTemplateName(template.name || '');
+            setNoShowsEmailSubject(template.subject || '');
+            setNoShowsEmail(template.body || '');
+          }
         }
       }
     } catch (error) {
@@ -851,14 +856,19 @@ export default function Dashboard() {
       );
 
       if (response.ok) {
-        const template = await response.json();
-        setCurrentTemplate(template);
-        setTemplateName(template.name || '');
-        setEmailSubject(template.subject || '');
-        if (activeTab === 'attendees') {
-          setAttendeesEmail(template.body || '');
-        } else {
-          setNoShowsEmail(template.body || '');
+        const data = await response.json();
+        // Handle array response (consistent with fetchTemplates pattern)
+        const template = Array.isArray(data) ? data[0] : data;
+        
+        if (template) {
+          setCurrentTemplate(template);
+          setTemplateName(template.name || '');
+          setEmailSubject(template.subject || '');
+          if (activeTab === 'attendees') {
+            setAttendeesEmail(template.body || '');
+          } else {
+            setNoShowsEmail(template.body || '');
+          }
         }
       }
     } catch (error) {
@@ -978,9 +988,22 @@ export default function Dashboard() {
 
         const createdTemplate = await createResponse.json();
         console.log('Template created:', createdTemplate);
-        templateId = createdTemplate.id;
+        
+        // Handle array response (consistent with fetchTemplates pattern)
+        const template = Array.isArray(createdTemplate) ? createdTemplate[0] : createdTemplate;
+        
+        if (!template || !template.id) {
+          throw new Error('Template created but no ID returned from server. Response: ' + JSON.stringify(createdTemplate));
+        }
+        
+        templateId = template.id;
         setSelectedTemplateId(templateId);
-        setCurrentTemplate(createdTemplate);
+        setCurrentTemplate(template);
+      }
+
+      // Validate templateId exists before saving assignment
+      if (!templateId) {
+        throw new Error('Template ID is required to save assignment');
       }
 
       // UPSERT assignment
@@ -1038,12 +1061,22 @@ export default function Dashboard() {
     return calculateDelayMinutes(delayAmount, delayUnit);
   };
 
-  // Refetch templates when tab changes (but don't clear tab-specific state)
+  // Refetch templates when tab changes and load selected template for that tab
   useEffect(() => {
     if (userData?.userId && hasSubscription) {
       fetchTemplates();
+      
+      // Load the selected template for the current tab if one exists
+      const selectedTemplateId = activeTab === 'attendees' 
+        ? attendeesSelectedTemplateId 
+        : noShowsSelectedTemplateId;
+      
+      if (selectedTemplateId) {
+        // Always load from API to ensure we have the latest data
+        loadTemplateForTab(selectedTemplateId, activeTab === 'attendees' ? 'attendees' : 'noShows');
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, attendeesSelectedTemplateId, noShowsSelectedTemplateId]);
 
   if (isLoading) {
     return (
@@ -1418,7 +1451,11 @@ export default function Dashboard() {
                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                             ['link'],
                             ['clean']
-                          ]
+                          ],
+                          clipboard: {
+                            // Explicitly enable clipboard module for paste functionality
+                            matchVisual: false
+                          }
                         }}
                       />
                     </div>
