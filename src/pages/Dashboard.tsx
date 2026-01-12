@@ -927,14 +927,14 @@ export default function Dashboard() {
 
       console.log('Saving template:', { selectedTemplateId: templateId, templateType, hasSubject: !!currentSubject, hasBody: !!emailBody });
 
-      // If template is selected, update it
-      if (templateId && currentTemplateData) {
+      // If template ID exists, update it (don't require currentTemplateData - we have the ID)
+      if (templateId) {
         const updatedTemplate = {
           user_id: userData.userId,
           template_type: templateType,
           subject: currentSubject,
           body: emailBody,
-          name: currentName || currentTemplateData.name || currentSubject || `${templateType} template`,
+          name: currentName || currentTemplateData?.name || currentSubject || `${templateType} template`,
         };
 
         console.log('Updating template:', updatedTemplate);
