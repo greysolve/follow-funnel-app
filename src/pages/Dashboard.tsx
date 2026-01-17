@@ -1061,24 +1061,16 @@ export default function Dashboard() {
     return calculateDelayMinutes(delayAmount, delayUnit);
   };
 
-  // Refetch templates when tab changes and load selected template for that tab
+  // Refetch templates when tab changes - but DON'T auto-reload template content
+  // This preserves user's unsaved edits when switching tabs
+  // Template ID is still set from fetchAssignment or handleTemplateSelect
   useEffect(() => {
     if (userData?.userId && hasSubscription) {
       fetchTemplates();
-      
-      // Load the selected template for the current tab if one exists
-      const selectedTemplateId = activeTab === 'attendees' 
-        ? attendeesSelectedTemplateId 
-        : noShowsSelectedTemplateId;
-      
-      if (selectedTemplateId) {
-        // Always load from API to ensure we have the latest data
-        loadTemplateForTab(selectedTemplateId, activeTab === 'attendees' ? 'attendees' : 'noShows');
-      }
-      // If no template selected, the email content should remain as-is from state
-      // (attendeesEmail or noShowsEmail based on activeTab)
+      // Don't call loadTemplateForTab here - it overwrites unsaved edits
+      // Template ID is preserved, only the content reload is skipped
     }
-  }, [activeTab]); // Only depend on activeTab, not the selected template IDs
+  }, [activeTab]);
 
   if (isLoading) {
     return (
