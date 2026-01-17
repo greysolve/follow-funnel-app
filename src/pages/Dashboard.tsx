@@ -879,22 +879,9 @@ export default function Dashboard() {
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId);
     if (templateId) {
-      // Try to find template in the already-loaded templates array first
-      const existingTemplate = templates.find((t: any) => t.id === templateId);
-      if (existingTemplate) {
-        // Use the template data we already have
-        setCurrentTemplate(existingTemplate);
-        setTemplateName(existingTemplate.name || '');
-        setEmailSubject(existingTemplate.subject || '');
-        if (activeTab === 'attendees') {
-          setAttendeesEmail(existingTemplate.body || '');
-        } else {
-          setNoShowsEmail(existingTemplate.body || '');
-        }
-      } else {
-        // If not found in array, fetch from API
-        loadTemplate(templateId);
-      }
+      // Always fetch from API when user explicitly selects a template
+      // This ensures we get the latest saved content
+      loadTemplateForTab(templateId, activeTab === 'attendees' ? 'attendees' : 'noShows');
     } else {
       setCurrentTemplate(null);
       setTemplateName('');
@@ -1061,14 +1048,27 @@ export default function Dashboard() {
     return calculateDelayMinutes(delayAmount, delayUnit);
   };
 
-  // Refetch templates when tab changes - but DON'T auto-reload template content
-  // This preserves user's unsaved edits when switching tabs
-  // Template ID is still set from fetchAssignment or handleTemplateSelect
+  // Refetch templates when tab changes
+  // Load template content only if there's no current content (preserves unsaved edits)
   useEffect(() => {
     if (userData?.userId && hasSubscription) {
       fetchTemplates();
-      // Don't call loadTemplateForTab here - it overwrites unsaved edits
-      // Template ID is preserved, only the content reload is skipped
+      
+      // Load the selected template for the current tab if one exists
+      const selectedTemplateId = activeTab === 'attendees' 
+        ? attendeesSelectedTemplateId 
+        : noShowsSelectedTemplateId;
+      
+      if (selectedTemplateId) {
+        // Check if there's existing content in state for this tab
+        const currentContent = activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
+        const hasContent = currentContent && currentContent.trim() !== '' && currentContent !== '<p><br></p>';
+        
+        // Only load from API if there's no current content (preserve unsaved edits)
+        if (!hasContent) {
+          loadTemplateForTab(selectedTemplateId, activeTab === 'attendees' ? 'attendees' : 'noShows');
+        }
+      }
     }
   }, [activeTab]);
 
