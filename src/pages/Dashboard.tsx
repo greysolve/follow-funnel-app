@@ -823,6 +823,9 @@ export default function Dashboard() {
         const data = await response.json();
         // Handle array response (consistent with fetchTemplates pattern)
         const template = Array.isArray(data) ? data[0] : data;
+        console.log('Template from API:', template);
+
+console.log('Template body:', template.body);
         
         if (template) {
           if (tab === 'attendees') {
