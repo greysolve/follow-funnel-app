@@ -398,7 +398,6 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    console.log('Templates useEffect:', { userId: userData?.userId, hasSubscription, connectionsLength: connections.length });
     if (userData?.userId && hasSubscription && connections.length > 0) {
       fetchMeetings();
       fetchTemplates();
@@ -585,21 +584,33 @@ export default function Dashboard() {
 
     setIsLoadingTemplates(true);
     try {
-      // Get template_type based on active tab (attendees or no_shows)
-      const templateType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
-      const response = await fetch(
-        `/api/templates?userId=${userData.userId}&template_type=${templateType}`,
-        {
+      // Fetch templates for both types so dropdown has all options
+      const [attendeesResponse, noShowsResponse] = await Promise.all([
+        fetch(`/api/templates?userId=${userData.userId}&template_type=attendees`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-        }
-      );
+        }),
+        fetch(`/api/templates?userId=${userData.userId}&template_type=no_shows`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
-        const templatesList = Array.isArray(data) ? data : (data ? [data] : []);
-        setTemplates(templatesList);
+      const allTemplates: any[] = [];
+      
+      if (attendeesResponse.ok) {
+        const attendeesData = await attendeesResponse.json();
+        const attendeesList = Array.isArray(attendeesData) ? attendeesData : (attendeesData ? [attendeesData] : []);
+        allTemplates.push(...attendeesList);
       }
+      
+      if (noShowsResponse.ok) {
+        const noShowsData = await noShowsResponse.json();
+        const noShowsList = Array.isArray(noShowsData) ? noShowsData : (noShowsData ? [noShowsData] : []);
+        allTemplates.push(...noShowsList);
+      }
+      
+      setTemplates(allTemplates);
     } catch (error) {
       console.error('Error fetching templates:', error);
     } finally {
