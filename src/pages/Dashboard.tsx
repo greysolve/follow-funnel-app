@@ -1064,7 +1064,7 @@ export default function Dashboard() {
   // Load template content only if there's no current content (preserves unsaved edits)
   useEffect(() => {
     if (userData?.userId && hasSubscription) {
-      fetchTemplates();
+      // Don't call fetchTemplates() here - it's already called in the other useEffect
       
       // Load the selected template for the current tab if one exists
       const selectedTemplateId = activeTab === 'attendees' 
