@@ -270,7 +270,7 @@ export function useDashboardData() {
   };
 
   const fetchAssignment = async (selectedMeeting: string, userId: string) => {
-    if (!selectedMeeting || !userId) return;
+    if (!selectedMeeting || !userId) return null;
 
     try {
       const response = await fetch(
@@ -285,12 +285,16 @@ export function useDashboardData() {
         const data = await response.json();
         if (data && data.template_id) {
           setAssignment(data);
+          return data;
         } else {
           setAssignment(null);
+          return null;
         }
       }
+      return null;
     } catch (error) {
       console.error('Error fetching assignment:', error);
+      return null;
     }
   };
 

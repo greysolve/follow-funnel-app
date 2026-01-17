@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -11,15 +11,13 @@ interface EmailEditorProps {
   keyValue?: string; // For forcing remount
 }
 
-export default function EmailEditor({
-  subject,
-  body,
-  onSubjectChange,
-  onBodyChange,
-  disabled = false,
-  keyValue,
-}: EmailEditorProps) {
-  const quillRef = useRef<any>(null);
+export interface EmailEditorRef {
+  insertVariable: (variable: string) => void;
+}
+
+const EmailEditor = forwardRef<EmailEditorRef, EmailEditorProps>(
+  ({ subject, body, onSubjectChange, onBodyChange, disabled = false, keyValue }, ref) => {
+    const quillRef = useRef<any>(null);
 
   // Update ReactQuill content when body prop changes
   useEffect(() => {
@@ -36,16 +34,27 @@ export default function EmailEditor({
     onBodyChange(content);
   };
 
-  const insertVariable = (variable: string) => {
-    if (!quillRef.current || !quillRef.current.editor) return;
-    
-    const editor = quillRef.current.editor;
-    const range = editor.getSelection(true);
-    editor.insertText(range.index, variable, 'user');
-    editor.setSelection(range.index + variable.length);
-  };
+    const insertVariable = (variable: string) => {
+      if (!quillRef.current || !quillRef.current.editor) return;
+      
+      const editor = quillRef.current.editor;
+      const range = editor.getSelection(true);
+      if (range) {
+        editor.insertText(range.index, variable, 'user');
+        editor.setSelection(range.index + variable.length);
+      } else {
+        // If no selection, append to end
+        const length = editor.getLength();
+        editor.insertText(length - 1, variable, 'user');
+        editor.setSelection(length - 1 + variable.length);
+      }
+    };
 
-  return (
+    useImperativeHandle(ref, () => ({
+      insertVariable,
+    }));
+
+    return (
     <>
       <div className="p-6 border-b border-gray-200">
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -86,7 +95,10 @@ export default function EmailEditor({
       </div>
     </>
   );
-}
+  }
+);
 
-// Export the insertVariable function for use by parent
+EmailEditor.displayName = 'EmailEditor';
+
+export default EmailEditor;
 export type { EmailEditorProps };
