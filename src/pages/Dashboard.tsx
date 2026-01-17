@@ -859,8 +859,23 @@ export default function Dashboard() {
   const loadTemplateForTab = (templateId: string, tab: 'attendees' | 'noShows') => {
     if (!templateId) return;
 
+    console.log('🔵 loadTemplateForTab called:', {
+      templateId,
+      tab,
+      templatesCount: templates.length,
+      templateIds: templates.map((t: any) => ({ id: t.id, name: t.name }))
+    });
+
     // Find the template in the already-loaded templates array
     const template = templates.find((t: any) => t.id === templateId);
+    
+    console.log('🟢 Template found:', {
+      found: !!template,
+      templateId: template?.id,
+      templateName: template?.name,
+      templateSubject: template?.subject,
+      templateBody: template?.body ? template.body.substring(0, 50) + '...' : 'empty'
+    });
     
     if (template) {
       if (tab === 'attendees') {
@@ -874,6 +889,8 @@ export default function Dashboard() {
         setNoShowsEmailSubject(template.subject || '');
         setNoShowsEmail(template.body || '');
       }
+    } else {
+      console.error('❌ Template not found in array:', templateId);
     }
   };
 
@@ -914,6 +931,12 @@ export default function Dashboard() {
   };
 
   const handleTemplateSelect = (templateId: string) => {
+    console.log('🟦 handleTemplateSelect called:', {
+      templateId,
+      activeTab,
+      currentSelectedId: getSelectedTemplateId()
+    });
+    
     const currentTab = activeTab === 'attendees' ? 'attendees' : 'noShows';
     setSelectedTemplateId(templateId);
     if (templateId) {
