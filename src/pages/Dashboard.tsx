@@ -856,39 +856,24 @@ export default function Dashboard() {
     }
   };
 
-  const loadTemplateForTab = async (templateId: string, tab: 'attendees' | 'noShows') => {
-    if (!userData?.userId) return;
+  const loadTemplateForTab = (templateId: string, tab: 'attendees' | 'noShows') => {
+    if (!templateId) return;
 
-    try {
-      const response = await fetch(
-        `/api/templates?userId=${userData.userId}&templateId=${templateId}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        // Handle array response (consistent with fetchTemplates pattern)
-        const template = Array.isArray(data) ? data[0] : data;
-        
-        if (template) {
-          if (tab === 'attendees') {
-            setAttendeesCurrentTemplate(template);
-            setAttendeesTemplateName(template.name || '');
-            setAttendeesEmailSubject(template.subject || '');
-            setAttendeesEmail(template.body || '');
-          } else {
-            setNoShowsCurrentTemplate(template);
-            setNoShowsTemplateName(template.name || '');
-            setNoShowsEmailSubject(template.subject || '');
-            setNoShowsEmail(template.body || '');
-          }
-        }
+    // Find the template in the already-loaded templates array
+    const template = templates.find((t: any) => t.id === templateId);
+    
+    if (template) {
+      if (tab === 'attendees') {
+        setAttendeesCurrentTemplate(template);
+        setAttendeesTemplateName(template.name || '');
+        setAttendeesEmailSubject(template.subject || '');
+        setAttendeesEmail(template.body || '');
+      } else {
+        setNoShowsCurrentTemplate(template);
+        setNoShowsTemplateName(template.name || '');
+        setNoShowsEmailSubject(template.subject || '');
+        setNoShowsEmail(template.body || '');
       }
-    } catch (error) {
-      console.error('Error loading template:', error);
     }
   };
 
