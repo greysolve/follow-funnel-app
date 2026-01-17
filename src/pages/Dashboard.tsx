@@ -398,6 +398,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    console.log('Templates useEffect:', { userId: userData?.userId, hasSubscription, connectionsLength: connections.length });
     if (userData?.userId && hasSubscription && connections.length > 0) {
       fetchMeetings();
       fetchTemplates();
