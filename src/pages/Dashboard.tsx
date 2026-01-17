@@ -1075,19 +1075,6 @@ console.log('Template body:', template.body);
     }
   }, [activeTab]);
 
-  // Update ReactQuill content when email state or tab changes
-  useEffect(() => {
-    if (quillRef.current) {
-      const quill = quillRef.current.getEditor();
-      const currentContent = getCurrentEmailContent();
-      // Always update ReactQuill to match current tab's content
-      // This ensures correct content is shown when switching tabs
-      if (quill.root.innerHTML !== currentContent) {
-        quill.root.innerHTML = currentContent || '';
-      }
-    }
-  }, [attendeesEmail, noShowsEmail, activeTab]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -1440,7 +1427,7 @@ console.log('Template body:', template.body);
                   ) : (
                     <div onDrop={handleEditorDrop} onDragOver={(e) => e.preventDefault()}>
                       <ReactQuill
-                        key={`${activeTab}-${getSelectedTemplateId()}`}
+                        key={activeTab}
                         ref={quillRef}
                         theme="snow"
                         value={getCurrentEmailContent()}
