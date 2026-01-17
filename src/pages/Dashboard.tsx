@@ -400,12 +400,22 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    console.log('🟦 Initial useEffect triggered:', {
+      userId: userData?.userId,
+      hasSubscription,
+      hasRequiredConnections,
+      templatesFetchedRef: templatesFetchedRef.current
+    });
+    
     if (userData?.userId && hasSubscription && hasRequiredConnections) {
       fetchMeetings();
       // Only fetch templates once on initial load
       if (!templatesFetchedRef.current) {
+        console.log('🟦 Calling fetchTemplates from initial useEffect');
         fetchTemplates();
         templatesFetchedRef.current = true;
+      } else {
+        console.log('🟦 Skipping fetchTemplates - already fetched');
       }
     }
   }, [userData?.userId, hasSubscription, hasRequiredConnections]);
@@ -414,6 +424,7 @@ export default function Dashboard() {
     if (selectedMeeting && hasRequiredConnections) {
       // Fetch templates when meeting is selected (if not already fetched)
       if (!templatesFetchedRef.current && userData?.userId && hasSubscription) {
+        console.log('🟧 Calling fetchTemplates from selectedMeeting useEffect');
         fetchTemplates();
         templatesFetchedRef.current = true;
       }
@@ -595,6 +606,13 @@ export default function Dashboard() {
   };
 
   const fetchTemplates = async () => {
+    console.log('🔵 fetchTemplates CALLED', {
+      userId: userData?.userId,
+      templatesFetchedRef: templatesFetchedRef.current,
+      currentTemplatesCount: templates.length,
+      stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
+    });
+    
     if (!userData?.userId) return;
 
     setIsLoadingTemplates(true);
@@ -616,16 +634,33 @@ export default function Dashboard() {
       if (attendeesResponse.ok) {
         const attendeesData = await attendeesResponse.json();
         const attendeesList = Array.isArray(attendeesData) ? attendeesData : (attendeesData ? [attendeesData] : []);
+        console.log('🟢 Attendees templates received:', {
+          count: attendeesList.length,
+          ids: attendeesList.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+        });
         allTemplates.push(...attendeesList);
       }
       
       if (noShowsResponse.ok) {
         const noShowsData = await noShowsResponse.json();
         const noShowsList = Array.isArray(noShowsData) ? noShowsData : (noShowsData ? [noShowsData] : []);
+        console.log('🟡 No-shows templates received:', {
+          count: noShowsList.length,
+          ids: noShowsList.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+        });
         allTemplates.push(...noShowsList);
       }
       
+      console.log('🟣 Before setTemplates:', {
+        totalCount: allTemplates.length,
+        allIds: allTemplates.map((t: any) => t.id),
+        duplicateIds: allTemplates.map((t: any) => t.id).filter((id: any, i: number, arr: any[]) => arr.indexOf(id) !== i),
+        templates: allTemplates.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+      });
+      
       setTemplates(allTemplates);
+      
+      console.log('🟠 After setTemplates called');
     } catch (error) {
       console.error('Error fetching templates:', error);
     } finally {
@@ -1078,6 +1113,16 @@ export default function Dashboard() {
   };
 
   // Refetch templates when tab changes
+  // Watch templates state to see when it changes
+  useEffect(() => {
+    console.log('🔴 Templates state changed:', {
+      count: templates.length,
+      ids: templates.map((t: any) => t.id),
+      duplicateIds: templates.map((t: any) => t.id).filter((id: any, i: number, arr: any[]) => arr.indexOf(id) !== i),
+      templates: templates.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+    });
+  }, [templates]);
+
   // Load template content only if there's no current content (preserves unsaved edits)
   useEffect(() => {
     if (userData?.userId && hasSubscription) {
