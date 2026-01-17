@@ -1075,6 +1075,18 @@ console.log('Template body:', template.body);
     }
   }, [activeTab]);
 
+  // Update ReactQuill content when email state changes
+  useEffect(() => {
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const currentContent = getCurrentEmailContent();
+      // Only update if content exists and is different from current
+      if (currentContent && quill.root.innerHTML !== currentContent) {
+        quill.root.innerHTML = currentContent;
+      }
+    }
+  }, [attendeesEmail, noShowsEmail, activeTab]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
