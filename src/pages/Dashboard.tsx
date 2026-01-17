@@ -402,7 +402,7 @@ export default function Dashboard() {
       fetchMeetings();
       fetchTemplates();
     }
-  }, [userData?.userId, hasSubscription, connections]);
+  }, [userData?.userId, hasSubscription]);
 
   useEffect(() => {
     if (selectedMeeting && connections.length > 0) {
