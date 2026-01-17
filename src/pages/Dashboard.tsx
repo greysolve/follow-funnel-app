@@ -617,50 +617,32 @@ export default function Dashboard() {
 
     setIsLoadingTemplates(true);
     try {
-      // Fetch templates for both types so dropdown has all options
-      const [attendeesResponse, noShowsResponse] = await Promise.all([
-        fetch(`/api/templates?userId=${userData.userId}&template_type=attendees`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }),
-        fetch(`/api/templates?userId=${userData.userId}&template_type=no_shows`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ]);
-
-      const allTemplates: any[] = [];
-      
-      if (attendeesResponse.ok) {
-        const attendeesData = await attendeesResponse.json();
-        const attendeesList = Array.isArray(attendeesData) ? attendeesData : (attendeesData ? [attendeesData] : []);
-        console.log('🟢 Attendees templates received:', {
-          count: attendeesList.length,
-          ids: attendeesList.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
-        });
-        allTemplates.push(...attendeesList);
-      }
-      
-      if (noShowsResponse.ok) {
-        const noShowsData = await noShowsResponse.json();
-        const noShowsList = Array.isArray(noShowsData) ? noShowsData : (noShowsData ? [noShowsData] : []);
-        console.log('🟡 No-shows templates received:', {
-          count: noShowsList.length,
-          ids: noShowsList.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
-        });
-        allTemplates.push(...noShowsList);
-      }
-      
-      console.log('🟣 Before setTemplates:', {
-        totalCount: allTemplates.length,
-        allIds: allTemplates.map((t: any) => t.id),
-        duplicateIds: allTemplates.map((t: any) => t.id).filter((id: any, i: number, arr: any[]) => arr.indexOf(id) !== i),
-        templates: allTemplates.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+      // Fetch all templates - API returns all regardless of template_type
+      const response = await fetch(`/api/templates?userId=${userData.userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
       });
-      
-      setTemplates(allTemplates);
-      
-      console.log('🟠 After setTemplates called');
+
+      if (response.ok) {
+        const data = await response.json();
+        const templatesList = Array.isArray(data) ? data : (data ? [data] : []);
+        
+        console.log('🟢 Templates received:', {
+          count: templatesList.length,
+          ids: templatesList.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+        });
+        
+        console.log('🟣 Before setTemplates:', {
+          totalCount: templatesList.length,
+          allIds: templatesList.map((t: any) => t.id),
+          duplicateIds: templatesList.map((t: any) => t.id).filter((id: any, i: number, arr: any[]) => arr.indexOf(id) !== i),
+          templates: templatesList.map((t: any) => ({ id: t.id, name: t.name, type: t.template_type }))
+        });
+        
+        setTemplates(templatesList);
+        
+        console.log('🟠 After setTemplates called');
+      }
     } catch (error) {
       console.error('Error fetching templates:', error);
     } finally {
