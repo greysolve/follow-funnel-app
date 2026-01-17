@@ -42,7 +42,9 @@ export default function Dashboard() {
   const [delayUnit, setDelayUnit] = useState<string>('minutes');
   const [isCreatingPackage, setIsCreatingPackage] = useState(false);
   const [recordingUrl, setRecordingUrl] = useState<string>('');
+  const [hasRequiredConnections, setHasRequiredConnections] = useState(false);
   const quillRef = useRef<any>(null);
+  const templatesFetchedRef = useRef(false);
 
   // Variable definitions
   const variables = [
@@ -398,14 +400,23 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (userData?.userId && hasSubscription && connections.length > 0) {
+    if (userData?.userId && hasSubscription && hasRequiredConnections) {
       fetchMeetings();
-      fetchTemplates();
+      // Only fetch templates once on initial load
+      if (!templatesFetchedRef.current) {
+        fetchTemplates();
+        templatesFetchedRef.current = true;
+      }
     }
-  }, [userData?.userId, hasSubscription]);
+  }, [userData?.userId, hasSubscription, hasRequiredConnections]);
 
   useEffect(() => {
-    if (selectedMeeting && connections.length > 0) {
+    if (selectedMeeting && hasRequiredConnections) {
+      // Fetch templates when meeting is selected (if not already fetched)
+      if (!templatesFetchedRef.current && userData?.userId && hasSubscription) {
+        fetchTemplates();
+        templatesFetchedRef.current = true;
+      }
       fetchAssignment();
       fetchRegistrants();
       fetchRecording();
@@ -426,7 +437,7 @@ export default function Dashboard() {
       setAllRegistrantsForPreview([]);
       setRecordingUrl('');
     }
-  }, [selectedMeeting, connections]);
+  }, [selectedMeeting, hasRequiredConnections]);
 
   const checkAuth = async () => {
     // Check Supabase session
@@ -492,12 +503,16 @@ export default function Dashboard() {
           gmailActive = gmailActive || ((conn.provider === 'gmail' || conn.provider === 'google-mail') && conn.status === 'active');
         });
         
-        return zoomActive && gmailActive;
+        const bothActive = zoomActive && gmailActive;
+        setHasRequiredConnections(bothActive);
+        return bothActive;
       }
       
+      setHasRequiredConnections(false);
       return false;
     } catch (error) {
       console.error('Error checking connections:', error);
+      setHasRequiredConnections(false);
       return false;
     }
   };
@@ -1033,7 +1048,9 @@ export default function Dashboard() {
 
       // Refresh assignment and templates
       await fetchAssignment();
+      templatesFetchedRef.current = false; // Reset so templates refresh after save
       await fetchTemplates();
+      templatesFetchedRef.current = true;
 
       setSaveMessage('Template and assignment saved successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
