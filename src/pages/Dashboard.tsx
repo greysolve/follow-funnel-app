@@ -1427,7 +1427,7 @@ console.log('Template body:', template.body);
                   ) : (
                     <div onDrop={handleEditorDrop} onDragOver={(e) => e.preventDefault()}>
                       <ReactQuill
-                        key={activeTab}
+                        key={`${activeTab}-${getSelectedTemplateId()}`}
                         ref={quillRef}
                         theme="snow"
                         value={getCurrentEmailContent()}
