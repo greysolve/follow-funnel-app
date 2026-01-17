@@ -1075,8 +1075,10 @@ export default function Dashboard() {
         // Always load from API to ensure we have the latest data
         loadTemplateForTab(selectedTemplateId, activeTab === 'attendees' ? 'attendees' : 'noShows');
       }
+      // If no template selected, the email content should remain as-is from state
+      // (attendeesEmail or noShowsEmail based on activeTab)
     }
-  }, [activeTab, attendeesSelectedTemplateId, noShowsSelectedTemplateId]);
+  }, [activeTab]); // Only depend on activeTab, not the selected template IDs
 
   if (isLoading) {
     return (
