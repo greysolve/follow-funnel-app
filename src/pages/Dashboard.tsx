@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, RefreshCw, Eye, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -677,9 +677,14 @@ export default function Dashboard() {
             // Load template content for no_shows tab
             loadTemplateForTab(data.template_id, 'noShows');
           } else {
-            // Fallback: set for current tab
-            setSelectedTemplateId(data.template_id);
-            loadTemplate(data.template_id);
+            // Fallback: set for current tab based on template_type or default to attendees
+            const fallbackTab = templateType === 'no_shows' ? 'noShows' : 'attendees';
+            if (fallbackTab === 'attendees') {
+              setAttendeesSelectedTemplateId(data.template_id);
+            } else {
+              setNoShowsSelectedTemplateId(data.template_id);
+            }
+            loadTemplate(data.template_id, fallbackTab);
           }
         } else {
           setAssignment(null);
@@ -887,7 +892,7 @@ export default function Dashboard() {
     }
   };
 
-  const loadTemplate = async (templateId: string) => {
+  const loadTemplate = async (templateId: string, tab: 'attendees' | 'noShows') => {
     if (!userData?.userId) return;
 
     try {
@@ -905,12 +910,15 @@ export default function Dashboard() {
         const template = Array.isArray(data) ? data[0] : data;
         
         if (template) {
-          setCurrentTemplate(template);
-          setTemplateName(template.name || '');
-          setEmailSubject(template.subject || '');
-          if (activeTab === 'attendees') {
+          if (tab === 'attendees') {
+            setAttendeesCurrentTemplate(template);
+            setAttendeesTemplateName(template.name || '');
+            setAttendeesEmailSubject(template.subject || '');
             setAttendeesEmail(template.body || '');
           } else {
+            setNoShowsCurrentTemplate(template);
+            setNoShowsTemplateName(template.name || '');
+            setNoShowsEmailSubject(template.subject || '');
             setNoShowsEmail(template.body || '');
           }
         }
@@ -921,18 +929,22 @@ export default function Dashboard() {
   };
 
   const handleTemplateSelect = (templateId: string) => {
+    const currentTab = activeTab === 'attendees' ? 'attendees' : 'noShows';
     setSelectedTemplateId(templateId);
     if (templateId) {
       // Always fetch from API when user explicitly selects a template
       // This ensures we get the latest saved content
-      loadTemplateForTab(templateId, activeTab === 'attendees' ? 'attendees' : 'noShows');
+      loadTemplateForTab(templateId, currentTab);
     } else {
-      setCurrentTemplate(null);
-      setTemplateName('');
-      setEmailSubject('');
-      if (activeTab === 'attendees') {
+      if (currentTab === 'attendees') {
+        setAttendeesCurrentTemplate(null);
+        setAttendeesTemplateName('');
+        setAttendeesEmailSubject('');
         setAttendeesEmail('');
       } else {
+        setNoShowsCurrentTemplate(null);
+        setNoShowsTemplateName('');
+        setNoShowsEmailSubject('');
         setNoShowsEmail('');
       }
     }
@@ -1083,6 +1095,18 @@ export default function Dashboard() {
   const getCurrentEmailContent = () => {
     return activeTab === 'attendees' ? attendeesEmail : noShowsEmail;
   };
+
+  // Create onChange handler that captures the current tab to avoid race conditions
+  const handleEditorChange = useCallback((content: string) => {
+    // Strip color styles before saving
+    const cleanedContent = stripColorStyles(content);
+    // Use activeTab at the time the callback was created (when component rendered)
+    if (activeTab === 'attendees') {
+      setAttendeesEmail(cleanedContent);
+    } else {
+      setNoShowsEmail(cleanedContent);
+    }
+  }, [activeTab]);
 
   const templateUsesRecordingLink = (): boolean => {
     const currentContent = getCurrentEmailContent();
@@ -1484,15 +1508,7 @@ export default function Dashboard() {
                         ref={quillRef}
                         theme="snow"
                         value={getCurrentEmailContent()}
-                        onChange={(content) => {
-                          // Strip color styles before saving
-                          const cleanedContent = stripColorStyles(content);
-                          if (activeTab === 'attendees') {
-                            setAttendeesEmail(cleanedContent);
-                          } else {
-                            setNoShowsEmail(cleanedContent);
-                          }
-                        }}
+                        onChange={handleEditorChange}
                         className="min-h-[400px] [&_.ql-editor]:text-black [&_.ql-editor]:text-lg"
                         modules={{
                           toolbar: [
