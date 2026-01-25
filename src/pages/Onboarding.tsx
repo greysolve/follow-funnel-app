@@ -17,6 +17,8 @@ export default function Onboarding() {
   const [emailStatus, setEmailStatus] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [isDisconnectingZoom, setIsDisconnectingZoom] = useState(false);
+  const [isDisconnectingEmail, setIsDisconnectingEmail] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -106,6 +108,14 @@ export default function Onboarding() {
         const data = await response.json();
         console.log('Connections check response:', data);
         
+        // Check if response is an error object
+        if (data && data.error) {
+          console.error('Connection check error:', data.error);
+          setZoomConnected(false);
+          setEmailConnected(false);
+          return;
+        }
+        
         // Initialize both as false
         let zoomActive = false;
         let gmailActive = false;
@@ -130,6 +140,8 @@ export default function Onboarding() {
     } catch (error) {
       console.error('Error checking connections:', error);
       // Don't show error to user, just assume not connected
+      setZoomConnected(false);
+      setEmailConnected(false);
     }
   };
 
@@ -147,6 +159,13 @@ export default function Onboarding() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Check if response is an error object
+        if (data && data.error) {
+          console.error('Subscription check error:', data.error);
+          setHasSubscription(false);
+          return;
+        }
         
         // API can return either a single object or an array
         if (Array.isArray(data)) {
@@ -347,6 +366,78 @@ export default function Onboarding() {
     }
   };
 
+  const disconnectZoom = async () => {
+    if (!userData?.userId) {
+      setZoomError('User information not available. Please refresh the page.');
+      return;
+    }
+
+    setIsDisconnectingZoom(true);
+    setZoomError('');
+
+    try {
+      const response = await fetch(
+        `/api/delete-connection?userId=${userData.userId}&provider=zoom`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        setZoomConnected(false);
+        await checkConnections();
+      } else {
+        const errorText = await response.text();
+        setZoomError(`Failed to disconnect Zoom: ${errorText || response.statusText}`);
+      }
+    } catch (error: any) {
+      console.error('Zoom disconnection error:', error);
+      setZoomError(
+        error.message ||
+        'Failed to disconnect Zoom. Please try again.'
+      );
+    } finally {
+      setIsDisconnectingZoom(false);
+    }
+  };
+
+  const disconnectGmail = async () => {
+    if (!userData?.userId) {
+      setEmailError('User information not available. Please refresh the page.');
+      return;
+    }
+
+    setIsDisconnectingEmail(true);
+    setEmailError('');
+
+    try {
+      const response = await fetch(
+        `/api/delete-connection?userId=${userData.userId}&provider=gmail`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        setEmailConnected(false);
+        await checkConnections();
+      } else {
+        const errorText = await response.text();
+        setEmailError(`Failed to disconnect Gmail: ${errorText || response.statusText}`);
+      }
+    } catch (error: any) {
+      console.error('Gmail disconnection error:', error);
+      setEmailError(
+        error.message ||
+        'Failed to disconnect Gmail. Please try again.'
+      );
+    } finally {
+      setIsDisconnectingEmail(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -430,9 +521,19 @@ export default function Onboarding() {
                   )}
                 </div>
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex items-center gap-2">
                 {zoomConnected ? (
-                  <div className="px-4 py-2 text-green-600 font-medium">Connected</div>
+                  <>
+                    <div className="px-4 py-2 text-green-600 font-medium">Connected</div>
+                    <button
+                      onClick={disconnectZoom}
+                      disabled={isDisconnectingZoom}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isDisconnectingZoom && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {isDisconnectingZoom ? 'Disconnecting...' : 'Disconnect'}
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={connectZoom}
@@ -480,9 +581,19 @@ export default function Onboarding() {
                   )}
                 </div>
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex items-center gap-2">
                 {emailConnected ? (
-                  <div className="px-4 py-2 text-green-600 font-medium">Connected</div>
+                  <>
+                    <div className="px-4 py-2 text-green-600 font-medium">Connected</div>
+                    <button
+                      onClick={disconnectGmail}
+                      disabled={isDisconnectingEmail}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isDisconnectingEmail && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {isDisconnectingEmail ? 'Disconnecting...' : 'Disconnect'}
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={connectGmail}
