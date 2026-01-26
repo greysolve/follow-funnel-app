@@ -237,6 +237,43 @@ export default function ZoomDocumentation() {
           </div>
         </section>
 
+        {/* SECTION 4: Deleting Connections */}
+        <section className="mb-12">
+          <h2 className="text-3xl font-semibold text-blue-600 mb-5 pb-3 border-b-2 border-gray-200">Deleting Connections</h2>
+          
+          <p className="text-gray-700 mb-6">You can disconnect Zoom or Gmail from your FollowFunnel account at any time from the onboarding page:</p>
+
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">How to Disconnect a Connection</h3>
+          <ol className="list-decimal pl-6 space-y-2 mb-6">
+            <li>Navigate to the onboarding page (you can access it from your user menu or by logging in)</li>
+            <li>Find the integration you want to disconnect (Zoom or Gmail)</li>
+            <li>If the service is connected, you'll see a <strong>"Disconnect"</strong> button next to the "Connected" status</li>
+            <li>Click the <strong>"Disconnect"</strong> button</li>
+            <li>The connection will be removed and the button will change back to "Connect"</li>
+          </ol>
+          <div className="mt-4 mb-6">
+            <img 
+              src="/img/followfunnel_delete_connection.png" 
+              alt="Onboarding page showing disconnect buttons for Zoom and Gmail" 
+              className="w-full max-w-3xl rounded-lg border-2 border-gray-200 shadow-sm"
+            />
+          </div>
+
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">What Happens When You Disconnect</h3>
+          <ul className="list-disc pl-6 space-y-2 mb-6 text-gray-700">
+            <li>The integration will no longer have access to your account</li>
+            <li>For Zoom: FollowFunnel will no longer be able to access your meeting data</li>
+            <li>For Gmail: FollowFunnel will no longer be able to send emails on your behalf</li>
+            <li>Your FollowFunnel account and templates remain active</li>
+            <li>You can reconnect the service at any time by clicking "Connect" again</li>
+          </ul>
+
+          <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded mb-6">
+            <strong className="text-blue-900">Note:</strong> 
+            <span className="text-blue-800 ml-2">Disconnecting a service does not delete your FollowFunnel account. You can reconnect at any time, and your templates and configurations will be preserved.</span>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t-2 border-gray-200 text-center text-gray-600">
           <p className="mb-2"><strong>Need Help?</strong></p>
