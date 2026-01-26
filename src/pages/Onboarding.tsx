@@ -413,7 +413,7 @@ export default function Onboarding() {
 
     try {
       const response = await fetch(
-        `/api/delete-connection?userId=${userData.userId}&provider=gmail`,
+        `/api/delete-connection?userId=${userData.userId}&provider=google-mail`,
         {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
