@@ -25,8 +25,18 @@ export default async function handler(
       }
     );
 
-    const data = await response.json();
-    res.status(response.status).json(data);
+    const text = await response.text();
+    if (!text) {
+      res.status(response.status).json([]);
+      return;
+    }
+
+    try {
+      const data = JSON.parse(text);
+      res.status(response.status).json(data);
+    } catch (parseError) {
+      res.status(500).json({ error: 'Invalid JSON response from webhook' });
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
