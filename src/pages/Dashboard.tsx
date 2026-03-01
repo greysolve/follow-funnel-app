@@ -521,7 +521,7 @@ export default function Dashboard() {
                   </li>
                 </ul>
                 <a
-                  href={`https://buy.stripe.com/test_00wbJ14tR9tBcGJ2Yk8EM00${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
+                  href={`https://buy.stripe.com/6oU4gBaoO1WDc9f6vwcIE03${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
@@ -555,7 +555,7 @@ export default function Dashboard() {
                   </li>
                 </ul>
                 <a
-                  href={`https://buy.stripe.com/test_6oU8wPgcz0X5gWZ8iE8EM01${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
+                  href={`https://buy.stripe.com/cNi4gB0Oe1WD2yFaLMcIE02${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
