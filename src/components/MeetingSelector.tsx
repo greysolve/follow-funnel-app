@@ -1,4 +1,10 @@
 import { RefreshCw } from 'lucide-react';
+import Select, { type SingleValue } from 'react-select';
+
+interface MeetingOption {
+  value: string;
+  label: string;
+}
 
 interface MeetingSelectorProps {
   meetings: any[];
@@ -15,6 +21,18 @@ export default function MeetingSelector({
   onMeetingChange,
   onRefresh,
 }: MeetingSelectorProps) {
+  const options: MeetingOption[] = meetings.map((meeting: any) => {
+    const meetingId = String(meeting.id ?? meeting.uuid ?? '');
+    const displayName = meeting.topic || `Meeting ${meetingId}`;
+    return { value: meetingId, label: displayName };
+  });
+
+  const selectedOption = options.find((opt) => opt.value === selectedMeeting) ?? null;
+
+  const handleChange = (option: SingleValue<MeetingOption>) => {
+    onMeetingChange(option?.value ?? '');
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -29,23 +47,29 @@ export default function MeetingSelector({
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
-      <select
-        value={selectedMeeting}
-        onChange={(e) => onMeetingChange(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        disabled={isLoading}
-      >
-        <option value="">Choose a meeting...</option>
-        {meetings.map((meeting: any) => {
-          const meetingId = meeting.id || meeting.uuid;
-          const displayName = meeting.topic || `Meeting ${meetingId}`;
-          return (
-            <option key={meetingId} value={meetingId}>
-              {displayName}
-            </option>
-          );
-        })}
-      </select>
+      <Select<MeetingOption>
+        value={selectedOption}
+        onChange={handleChange}
+        options={options}
+        isSearchable
+        isClearable
+        isDisabled={isLoading}
+        placeholder="Choose a meeting..."
+        classNamePrefix="meeting-select"
+        classNames={{
+          control: () =>
+            '!min-h-[42px] !border-gray-300 !rounded-lg !shadow-none hover:!border-gray-400 focus-within:!ring-2 focus-within:!ring-blue-500 focus-within:!border-blue-500',
+          menu: () => '!rounded-lg !border !border-gray-200 !shadow-lg !z-50',
+          option: (state) =>
+            state.isFocused
+              ? '!bg-blue-50 !text-gray-900'
+              : state.isSelected
+                ? '!bg-blue-100 !text-gray-900'
+                : '',
+          input: () => '!text-gray-900',
+          placeholder: () => '!text-gray-500',
+        }}
+      />
     </div>
   );
 }
