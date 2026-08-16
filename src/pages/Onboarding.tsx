@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Video, CheckCircle, Loader2, Mail, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import UserMenu from '../components/UserMenu';
+import StripePlanButton from '../components/StripePlanButton';
+import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, stripePaymentUrl } from '../utils/stripe';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -462,7 +464,7 @@ export default function Onboarding() {
             </div>
             
             {/* User Menu */}
-            <UserMenu firstName={firstName} userId={userData?.userId || ''} />
+            <UserMenu firstName={firstName} userId={userData?.userId || ''} hasSubscription={hasSubscription} />
           </div>
         </div>
       </header>
@@ -649,14 +651,7 @@ export default function Onboarding() {
                     <span>Email support</span>
                   </li>
                 </ul>
-                <a
-                  href={`https://buy.stripe.com/6oU4gBaoO1WDc9f6vwcIE03${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
-                >
-                  Select Plan
-                </a>
+                <StripePlanButton href={stripePaymentUrl(STRIPE_MONTHLY_LINK, userData?.userId)} />
               </div>
 
               {/* Lifetime Plan */}
@@ -683,16 +678,14 @@ export default function Onboarding() {
                     <span>No recurring charges</span>
                   </li>
                 </ul>
-                <a
-                  href={`https://buy.stripe.com/cNi4gB0Oe1WD2yFaLMcIE02${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
-                >
-                  Select Plan
-                </a>
+                <StripePlanButton href={stripePaymentUrl(STRIPE_LIFETIME_LINK, userData?.userId)} />
               </div>
             </div>
+            {!userData?.userId && (
+              <p className="text-sm text-amber-700 text-center">
+                Checkout is unavailable until your account is loaded. Refresh or sign in again.
+              </p>
+            )}
           </div>
         )}
 
