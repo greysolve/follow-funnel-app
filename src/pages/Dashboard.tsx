@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, Eye } from 'lucide-react';
+import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, Eye, AlertTriangle } from 'lucide-react';
 import UserMenu from '../components/UserMenu';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useTemplateEditor } from '../hooks/useTemplateEditor';
@@ -36,6 +36,8 @@ export default function Dashboard() {
     noShowsList,
     allRegistrantsForPreview,
     registrantsError,
+    registrationDisabled,
+    meetingOccurred,
     recordingUrl,
     templatesFetchedRef,
     fetchMeetings,
@@ -338,6 +340,18 @@ export default function Dashboard() {
       const delayMinutes = calculateDelayMinutes(delayAmount, delayUnit);
       const recipientType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
       const recordingUrlForPackage = recordingUrl || meeting.recording_url || null;
+      if (registrationDisabled) {
+        setSaveError('Registration is not enabled on this meeting, so a sending package cannot be created.');
+        setIsCreatingPackage(false);
+        return;
+      }
+
+      if (meetingOccurred === false && recipientType === 'attendees') {
+        setSaveError('This meeting has not occurred yet, so there are no attendees to send to.');
+        setIsCreatingPackage(false);
+        return;
+      }
+
       const recipientList = getCurrentRegistrantsList().map((registrant: any) => ({
         ...registrant,
       }));
@@ -593,8 +607,33 @@ export default function Dashboard() {
                     Loading meetings...
                   </p>
                 )}
-                {registrantsError && (
+                {registrationDisabled && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex gap-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-red-800">Registration is not enabled</p>
+                        <p className="mt-1 text-sm text-red-700">
+                          FollowFunnel can only email people who registered for the meeting. Enable
+                          registration in Zoom (Meeting settings → Registration → Required), then
+                          refresh this meeting. Until then, attendee and no-show follow-ups will not work.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {registrantsError && !registrationDisabled && (
                   <p className="mt-4 text-sm text-red-600">{registrantsError}</p>
+                )}
+                {selectedMeeting && meetingOccurred === false && !registrationDisabled && (
+                  <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    This meeting has not occurred yet. People listed under No Shows are registrants, not actual no-shows.
+                  </p>
+                )}
+                {selectedMeeting && meetingOccurred === true && (
+                  <p className="mt-4 text-sm text-gray-600">
+                    Meeting has occurred. {attendeesList.length} guest attendee{attendeesList.length === 1 ? '' : 's'}, {noShowsList.length} no-show{noShowsList.length === 1 ? '' : 's'}.
+                  </p>
                 )}
 
                 {/* Variable Chips */}
@@ -662,7 +701,7 @@ export default function Dashboard() {
                     {/* Create Sending Package Button */}
                     <button
                       onClick={handleCreateSendingPackage}
-                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage}
+                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage || registrationDisabled}
                       className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isCreatingPackage && <Loader2 className="w-4 h-4 animate-spin" />}
