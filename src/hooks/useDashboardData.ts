@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
 
 export function useDashboardData() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export function useDashboardData() {
   const [noShowsList, setNoShowsList] = useState<any[]>([]);
   const [allRegistrantsForPreview, setAllRegistrantsForPreview] = useState<any[]>([]);
   const [isLoadingRegistrants, setIsLoadingRegistrants] = useState(false);
+  const [registrantsError, setRegistrantsError] = useState<string>('');
   const [recordingUrl, setRecordingUrl] = useState<string>('');
   const [assignment, setAssignment] = useState<any>(null);
   const templatesFetchedRef = useRef(false);
@@ -147,6 +149,7 @@ export function useDashboardData() {
 
   const fetchRegistrants = async (selectedMeeting: string) => {
     if (!selectedMeeting || !userData?.userId) {
+      setRegistrantsError('');
       return;
     }
 
@@ -155,10 +158,12 @@ export function useDashboardData() {
       setAttendeesList([]);
       setNoShowsList([]);
       setAllRegistrantsForPreview([]);
+      setRegistrantsError('');
       return;
     }
 
     setIsLoadingRegistrants(true);
+    setRegistrantsError('');
     try {
       const response = await fetch(
         `/api/zoom-meeting-registrant-status?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
@@ -168,45 +173,48 @@ export function useDashboardData() {
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        let attendees: any[] = [];
-        let noShows: any[] = [];
-        
-        if (Array.isArray(data) && data.length > 0) {
-          const responseData = data[0];
-          
-          if (responseData?.attendees && Array.isArray(responseData.attendees)) {
-            attendees = responseData.attendees.map((attendee: any) => {
-              const nameParts = (attendee.name || '').trim().split(/\s+/);
-              return {
-                ...attendee,
-                first_name: nameParts[0] || '',
-                last_name: nameParts.slice(1).join(' ') || '',
-              };
-            });
-          }
-          
-          if (responseData?.no_shows && Array.isArray(responseData.no_shows)) {
-            noShows = responseData.no_shows;
-          }
-        }
-        
-        const allRegistrants = [...attendees, ...noShows];
-        setAttendeesList(attendees);
-        setNoShowsList(noShows);
-        setAllRegistrantsForPreview(allRegistrants);
-      } else {
+      const data = await response.json();
+
+      if (getApiErrorPayload(data) || !response.ok) {
         setAttendeesList([]);
         setNoShowsList([]);
         setAllRegistrantsForPreview([]);
+        setRegistrantsError(extractApiErrorMessage(data, 'Failed to load registrants for this meeting.'));
+        return;
       }
+
+      let attendees: any[] = [];
+      let noShows: any[] = [];
+
+      if (Array.isArray(data) && data.length > 0) {
+        const responseData = data[0];
+
+        if (responseData?.attendees && Array.isArray(responseData.attendees)) {
+          attendees = responseData.attendees.map((attendee: any) => {
+            const nameParts = (attendee.name || '').trim().split(/\s+/);
+            return {
+              ...attendee,
+              first_name: nameParts[0] || '',
+              last_name: nameParts.slice(1).join(' ') || '',
+            };
+          });
+        }
+
+        if (responseData?.no_shows && Array.isArray(responseData.no_shows)) {
+          noShows = responseData.no_shows;
+        }
+      }
+
+      const allRegistrants = [...attendees, ...noShows];
+      setAttendeesList(attendees);
+      setNoShowsList(noShows);
+      setAllRegistrantsForPreview(allRegistrants);
     } catch (error) {
       console.error('Error fetching registrant status:', error);
       setAttendeesList([]);
       setNoShowsList([]);
       setAllRegistrantsForPreview([]);
+      setRegistrantsError('Failed to load registrants for this meeting.');
     } finally {
       setIsLoadingRegistrants(false);
     }
@@ -355,6 +363,7 @@ export function useDashboardData() {
     noShowsList,
     allRegistrantsForPreview,
     isLoadingRegistrants,
+    registrantsError,
     recordingUrl,
     assignment,
     templatesFetchedRef,

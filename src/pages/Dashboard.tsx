@@ -15,6 +15,7 @@ import {
   calculateMeetingEndTime,
   stripColorStyles,
 } from '../utils/templateUtils';
+import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
 
 export default function Dashboard() {
   // Use custom hooks for data and template management
@@ -34,6 +35,7 @@ export default function Dashboard() {
     attendeesList,
     noShowsList,
     allRegistrantsForPreview,
+    registrantsError,
     recordingUrl,
     templatesFetchedRef,
     fetchMeetings,
@@ -336,9 +338,11 @@ export default function Dashboard() {
       const delayMinutes = calculateDelayMinutes(delayAmount, delayUnit);
       const recipientType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
       const recordingUrlForPackage = recordingUrl || meeting.recording_url || null;
-      const recipientList = getCurrentRegistrantsList().map((registrant: any) => ({
-        ...registrant,
-      }));
+      const recipientList = getCurrentRegistrantsList()
+        .filter((registrant: any) => registrant.role !== 'host')
+        .map((registrant: any) => ({
+          ...registrant,
+        }));
 
       const payload = {
         user_id: userData.userId,
@@ -363,12 +367,11 @@ export default function Dashboard() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to create sending package: ${response.status} ${errorText}`);
+      const result = await response.json();
+      if (getApiErrorPayload(result) || !response.ok) {
+        throw new Error(extractApiErrorMessage(result, 'Failed to create sending package. Please try again.'));
       }
 
-      const result = await response.json();
       console.log('Sending package created:', result);
       setSaveMessage('Sending package created successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
@@ -591,6 +594,9 @@ export default function Dashboard() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading meetings...
                   </p>
+                )}
+                {registrantsError && (
+                  <p className="mt-4 text-sm text-red-600">{registrantsError}</p>
                 )}
 
                 {/* Variable Chips */}
