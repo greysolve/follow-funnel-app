@@ -15,6 +15,7 @@ import {
   calculateMeetingEndTime,
   stripColorStyles,
 } from '../utils/templateUtils';
+import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
 
 export default function Dashboard() {
   // Use custom hooks for data and template management
@@ -34,6 +35,9 @@ export default function Dashboard() {
     attendeesList,
     noShowsList,
     allRegistrantsForPreview,
+    registrantsError,
+    registrationDisabled,
+    meetingOccurred,
     recordingUrl,
     templatesFetchedRef,
     fetchMeetings,
@@ -336,6 +340,18 @@ export default function Dashboard() {
       const delayMinutes = calculateDelayMinutes(delayAmount, delayUnit);
       const recipientType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
       const recordingUrlForPackage = recordingUrl || meeting.recording_url || null;
+      if (registrationDisabled) {
+        setSaveError('Registration is not enabled on this meeting, so a sending package cannot be created.');
+        setIsCreatingPackage(false);
+        return;
+      }
+
+      if (meetingOccurred === false && recipientType === 'attendees') {
+        setSaveError('This meeting has not occurred yet, so there are no attendees to send to.');
+        setIsCreatingPackage(false);
+        return;
+      }
+
       const recipientList = getCurrentRegistrantsList().map((registrant: any) => ({
         ...registrant,
       }));
@@ -363,12 +379,11 @@ export default function Dashboard() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to create sending package: ${response.status} ${errorText}`);
+      const result = await response.json();
+      if (getApiErrorPayload(result) || !response.ok) {
+        throw new Error(extractApiErrorMessage(result, 'Failed to create sending package. Please try again.'));
       }
 
-      const result = await response.json();
       console.log('Sending package created:', result);
       setSaveMessage('Sending package created successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
@@ -577,6 +592,7 @@ export default function Dashboard() {
                   meetings={meetings}
                   selectedMeeting={selectedMeeting}
                   isLoading={isLoadingMeetings}
+                  registrationDisabled={registrationDisabled}
                   onMeetingChange={handleMeetingChange}
                   onRefresh={handleMeetingRefresh}
                 />
@@ -590,6 +606,19 @@ export default function Dashboard() {
                   <p className="mt-4 text-sm text-blue-600 flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading meetings...
+                  </p>
+                )}
+                {registrantsError && !registrationDisabled && (
+                  <p className="mt-4 text-sm text-red-600">{registrantsError}</p>
+                )}
+                {selectedMeeting && meetingOccurred === false && !registrationDisabled && (
+                  <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    This meeting has not occurred yet. People listed under No Shows are registrants, not actual no-shows.
+                  </p>
+                )}
+                {selectedMeeting && meetingOccurred === true && (
+                  <p className="mt-4 text-sm text-gray-600">
+                    Meeting has occurred. {attendeesList.length} guest attendee{attendeesList.length === 1 ? '' : 's'}, {noShowsList.length} no-show{noShowsList.length === 1 ? '' : 's'}.
                   </p>
                 )}
 
@@ -658,7 +687,7 @@ export default function Dashboard() {
                     {/* Create Sending Package Button */}
                     <button
                       onClick={handleCreateSendingPackage}
-                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage}
+                      disabled={!selectedMeeting || !getSelectedTemplateId() || isCreatingPackage || registrationDisabled}
                       className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isCreatingPackage && <Loader2 className="w-4 h-4 animate-spin" />}
