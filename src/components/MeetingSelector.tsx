@@ -10,6 +10,7 @@ interface MeetingSelectorProps {
   meetings: any[];
   selectedMeeting: string;
   isLoading: boolean;
+  registrationDisabled?: boolean;
   onMeetingChange: (meetingId: string) => void;
   onRefresh: () => void;
 }
@@ -18,6 +19,7 @@ export default function MeetingSelector({
   meetings,
   selectedMeeting,
   isLoading,
+  registrationDisabled = false,
   onMeetingChange,
   onRefresh,
 }: MeetingSelectorProps) {
@@ -70,6 +72,13 @@ export default function MeetingSelector({
           placeholder: () => '!text-gray-500',
         }}
       />
+      {registrationDisabled && (
+        <p className="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          Registration is not enabled on this meeting. FollowFunnel can only email people who
+          registered. Enable registration in Zoom (Meeting settings → Registration → Required),
+          then refresh. Until then, attendee and no-show follow-ups will not work.
+        </p>
+      )}
     </div>
   );
 }

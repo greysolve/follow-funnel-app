@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, Eye, AlertTriangle } from 'lucide-react';
+import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, Eye } from 'lucide-react';
 import UserMenu from '../components/UserMenu';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useTemplateEditor } from '../hooks/useTemplateEditor';
@@ -592,6 +592,7 @@ export default function Dashboard() {
                   meetings={meetings}
                   selectedMeeting={selectedMeeting}
                   isLoading={isLoadingMeetings}
+                  registrationDisabled={registrationDisabled}
                   onMeetingChange={handleMeetingChange}
                   onRefresh={handleMeetingRefresh}
                 />
@@ -606,21 +607,6 @@ export default function Dashboard() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading meetings...
                   </p>
-                )}
-                {registrationDisabled && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex gap-3">
-                      <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-red-800">Registration is not enabled</p>
-                        <p className="mt-1 text-sm text-red-700">
-                          FollowFunnel can only email people who registered for the meeting. Enable
-                          registration in Zoom (Meeting settings → Registration → Required), then
-                          refresh this meeting. Until then, attendee and no-show follow-ups will not work.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 )}
                 {registrantsError && !registrationDisabled && (
                   <p className="mt-4 text-sm text-red-600">{registrantsError}</p>

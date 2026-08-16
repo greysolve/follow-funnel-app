@@ -13,11 +13,14 @@ export function getApiErrorPayload(data: unknown): { status?: number; message?: 
 }
 
 export function getRegistrantStatusPayload(data: unknown): Record<string, any> | null {
-  const first = Array.isArray(data) ? data[0] : data;
-  if (!first || typeof first !== 'object') {
+  let current: unknown = data;
+  while (Array.isArray(current)) {
+    current = current[0];
+  }
+  if (!current || typeof current !== 'object') {
     return null;
   }
-  return first as Record<string, any>;
+  return current as Record<string, any>;
 }
 
 export function extractErrorsArrayMessage(errors: unknown): string {
@@ -37,22 +40,14 @@ export function extractErrorsArrayMessage(errors: unknown): string {
     .join(' ');
 }
 
-export function isRegistrationDisabledError(data: unknown, extraMessage = ''): boolean {
-  const payload = getRegistrantStatusPayload(data);
-  const errors = Array.isArray(payload?.errors) ? payload.errors : [];
-  const fromErrors = errors.some((item) => {
-    if (typeof item === 'string') {
-      return /registration has not been enabled/i.test(item);
-    }
-    if (item && typeof item === 'object') {
-      const message = (item as { message?: string }).message || '';
-      return /registration has not been enabled/i.test(message);
-    }
-    return false;
-  });
+const REGISTRATION_DISABLED_PATTERN = /registration has not been enabled/i;
 
-  const combined = `${extractApiErrorMessage(data, '')} ${extraMessage}`;
-  return fromErrors || /registration has not been enabled/i.test(combined);
+export function isRegistrationDisabledError(data: unknown, extraMessage = ''): boolean {
+  try {
+    return REGISTRATION_DISABLED_PATTERN.test(`${JSON.stringify(data)} ${extraMessage}`);
+  } catch {
+    return REGISTRATION_DISABLED_PATTERN.test(extraMessage);
+  }
 }
 
 export function extractApiErrorMessage(data: unknown, fallback = 'Request failed'): string {

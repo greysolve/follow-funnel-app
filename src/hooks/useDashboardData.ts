@@ -185,6 +185,17 @@ export function useDashboardData() {
       const errorsMessage = extractErrorsArrayMessage(responseData?.errors);
       const isExplicitError = Boolean(getApiErrorPayload(data));
       const status = responseData?.status;
+      const registrationOff = isRegistrationDisabledError(data, errorsMessage);
+
+      if (registrationOff) {
+        setAttendeesList([]);
+        setNoShowsList([]);
+        setAllRegistrantsForPreview([]);
+        setMeetingOccurred(typeof responseData?.meeting_occurred === 'boolean' ? responseData.meeting_occurred : false);
+        setRegistrationDisabled(true);
+        setRegistrantsError('');
+        return;
+      }
 
       if (isExplicitError) {
         const message = extractApiErrorMessage(data, 'Failed to load registrants for this meeting.');
