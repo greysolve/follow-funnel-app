@@ -205,9 +205,10 @@ export function useDashboardData() {
         }
       }
 
+      const guestsOnly = (person: any) => String(person?.role || '').toLowerCase() !== 'host';
       const allRegistrants = [...attendees, ...noShows];
-      setAttendeesList(attendees);
-      setNoShowsList(noShows);
+      setAttendeesList(attendees.filter(guestsOnly));
+      setNoShowsList(noShows.filter(guestsOnly));
       setAllRegistrantsForPreview(allRegistrants);
     } catch (error) {
       console.error('Error fetching registrant status:', error);

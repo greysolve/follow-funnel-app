@@ -338,11 +338,9 @@ export default function Dashboard() {
       const delayMinutes = calculateDelayMinutes(delayAmount, delayUnit);
       const recipientType = activeTab === 'attendees' ? 'attendees' : 'no_shows';
       const recordingUrlForPackage = recordingUrl || meeting.recording_url || null;
-      const recipientList = getCurrentRegistrantsList()
-        .filter((registrant: any) => registrant.role !== 'host')
-        .map((registrant: any) => ({
-          ...registrant,
-        }));
+      const recipientList = getCurrentRegistrantsList().map((registrant: any) => ({
+        ...registrant,
+      }));
 
       const payload = {
         user_id: userData.userId,
