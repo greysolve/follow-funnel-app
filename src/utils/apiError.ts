@@ -42,7 +42,30 @@ export function extractErrorsArrayMessage(errors: unknown): string {
 
 const REGISTRATION_DISABLED_PATTERN = /registration has not been enabled/i;
 
+export function errorsIncludeRegistrationDisabled(errors: unknown): boolean {
+  if (!Array.isArray(errors)) {
+    return false;
+  }
+
+  return errors.some((item) => {
+    if (typeof item === 'string') {
+      return REGISTRATION_DISABLED_PATTERN.test(item);
+    }
+    if (!item || typeof item !== 'object') {
+      return false;
+    }
+    const message = String((item as { message?: unknown }).message || '');
+    const code = Number((item as { code?: unknown }).code);
+    return REGISTRATION_DISABLED_PATTERN.test(message) || code === 300;
+  });
+}
+
 export function isRegistrationDisabledError(data: unknown, extraMessage = ''): boolean {
+  const payload = getRegistrantStatusPayload(data);
+  if (errorsIncludeRegistrationDisabled(payload?.errors)) {
+    return true;
+  }
+
   try {
     return REGISTRATION_DISABLED_PATTERN.test(`${JSON.stringify(data)} ${extraMessage}`);
   } catch {

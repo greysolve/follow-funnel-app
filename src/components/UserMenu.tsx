@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Settings, Trash2, LogOut } from 'lucide-react';
+import { ChevronDown, Settings, Trash2, LogOut, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface UserMenuProps {
   firstName: string;
   userId: string;
+  hasSubscription?: boolean;
 }
 
-export default function UserMenu({ firstName, userId }: UserMenuProps) {
+export default function UserMenu({ firstName, userId, hasSubscription = false }: UserMenuProps) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
 
   const handleDeleteAccount = async () => {
     if (!userId) {
@@ -44,6 +46,37 @@ export default function UserMenu({ firstName, userId }: UserMenuProps) {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!userId) {
+      alert('User information not available. Please refresh the page.');
+      return;
+    }
+
+    setIsCanceling(true);
+    try {
+      const response = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+        }),
+      });
+
+      if (response.ok) {
+        window.location.reload();
+        return;
+      }
+
+      const errorText = await response.text();
+      alert(`Failed to cancel subscription: ${errorText || response.statusText}`);
+    } catch (error: any) {
+      console.error('Error canceling subscription:', error);
+      alert(`Failed to cancel subscription: ${error.message || 'Please try again.'}`);
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
   return (
     <div className="relative">
       <button
@@ -61,7 +94,7 @@ export default function UserMenu({ firstName, userId }: UserMenuProps) {
             className="fixed inset-0 z-10" 
             onClick={() => setIsMenuOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
             <button
               onClick={() => {
                 setIsMenuOpen(false);
@@ -72,6 +105,23 @@ export default function UserMenu({ firstName, userId }: UserMenuProps) {
               <Settings className="w-4 h-4" />
               Manage Connections
             </button>
+            {hasSubscription && (
+              <button
+                onClick={async () => {
+                  setIsMenuOpen(false);
+                  const confirmMessage =
+                    'Cancel your subscription? You will keep access until the end of your current billing period. This cannot be undone from here.';
+                  if (window.confirm(confirmMessage)) {
+                    await handleCancelSubscription();
+                  }
+                }}
+                disabled={isCanceling}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 disabled:opacity-50"
+              >
+                <CreditCard className="w-4 h-4" />
+                {isCanceling ? 'Canceling...' : 'Cancel Subscription'}
+              </button>
+            )}
             <button
               onClick={async () => {
                 setIsMenuOpen(false);

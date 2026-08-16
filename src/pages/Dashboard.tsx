@@ -16,6 +16,8 @@ import {
   stripColorStyles,
 } from '../utils/templateUtils';
 import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
+import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, stripePaymentUrl } from '../utils/stripe';
+import StripePlanButton from '../components/StripePlanButton';
 
 export default function Dashboard() {
   // Use custom hooks for data and template management
@@ -492,7 +494,7 @@ export default function Dashboard() {
             <span className="text-xl font-semibold">FollowFunnel</span>
           </div>
           <div className="flex items-center gap-4">
-            <UserMenu firstName={userData?.firstName || 'User'} userId={userData?.userId || ''} />
+            <UserMenu firstName={userData?.firstName || 'User'} userId={userData?.userId || ''} hasSubscription={hasSubscription} />
           </div>
         </div>
       </header>
@@ -535,14 +537,7 @@ export default function Dashboard() {
                     <span>Email support</span>
                   </li>
                 </ul>
-                <a
-                  href={`https://buy.stripe.com/6oU4gBaoO1WDc9f6vwcIE03${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
-                >
-                  Select Plan
-                </a>
+                <StripePlanButton href={stripePaymentUrl(STRIPE_MONTHLY_LINK, userData?.userId)} />
               </div>
 
               {/* Lifetime Plan */}
@@ -569,16 +564,14 @@ export default function Dashboard() {
                     <span>No recurring charges</span>
                   </li>
                 </ul>
-                <a
-                  href={`https://buy.stripe.com/cNi4gB0Oe1WD2yFaLMcIE02${userData?.userId ? `?client_reference_id=${encodeURIComponent(userData.userId)}` : ''}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition text-center"
-                >
-                  Select Plan
-                </a>
+                <StripePlanButton href={stripePaymentUrl(STRIPE_LIFETIME_LINK, userData?.userId)} />
               </div>
             </div>
+            {!userData?.userId && (
+              <p className="text-sm text-amber-700 text-center">
+                Checkout is unavailable until your account is loaded. Refresh or sign in again.
+              </p>
+            )}
           </div>
         )}
 
