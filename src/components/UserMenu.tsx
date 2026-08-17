@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Settings, Trash2, LogOut, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { clearDashboardStorage } from '../utils/dashboardStorage';
 
 interface UserMenuProps {
   firstName: string;
@@ -53,9 +54,10 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
       if (response.ok) {
         // Sign out from Supabase
         await supabase.auth.signOut();
-        // Clear localStorage
         localStorage.removeItem('user');
-        // Redirect to homepage
+        if (userId) {
+          clearDashboardStorage(userId);
+        }
         navigate('/');
       } else {
         const errorText = await response.text();
@@ -154,6 +156,9 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
                 setIsMenuOpen(false);
                 await supabase.auth.signOut();
                 localStorage.removeItem('user');
+                if (userId) {
+                  clearDashboardStorage(userId);
+                }
                 navigate('/');
               }}
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"

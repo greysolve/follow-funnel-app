@@ -18,6 +18,7 @@ import {
 import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
 import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, stripePaymentUrl } from '../utils/stripe';
 import StripePlanButton from '../components/StripePlanButton';
+import { loadSelectedMeeting, saveSelectedMeeting } from '../utils/dashboardStorage';
 
 export default function Dashboard() {
   // Use custom hooks for data and template management
@@ -401,6 +402,9 @@ export default function Dashboard() {
 
   const handleMeetingChange = (meetingId: string) => {
     setSelectedMeeting(meetingId);
+    if (userData?.userId) {
+      saveSelectedMeeting(userData.userId, meetingId);
+    }
   };
 
   const handleMeetingRefresh = () => {
@@ -414,6 +418,28 @@ export default function Dashboard() {
 
 
   // Effects
+  useEffect(() => {
+    if (!userData?.userId || selectedMeeting || meetings.length === 0) {
+      return;
+    }
+
+    const savedMeetingId = loadSelectedMeeting(userData.userId);
+    if (!savedMeetingId) {
+      return;
+    }
+
+    const stillExists = meetings.some((meeting: any) => {
+      const meetingId = String(meeting.id ?? meeting.uuid ?? '');
+      return meetingId === savedMeetingId;
+    });
+
+    if (stillExists) {
+      setSelectedMeeting(savedMeetingId);
+    } else {
+      saveSelectedMeeting(userData.userId, '');
+    }
+  }, [meetings, userData?.userId, selectedMeeting]);
+
   useEffect(() => {
     if (selectedMeeting && hasRequiredConnections) {
       const loadData = async () => {
