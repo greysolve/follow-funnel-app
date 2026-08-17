@@ -4,7 +4,7 @@ import { Video, CheckCircle, Loader2, Mail, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import UserMenu from '../components/UserMenu';
 import StripePlanButton from '../components/StripePlanButton';
-import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, stripePaymentUrl } from '../utils/stripe';
+import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, parseSubscription, stripePaymentUrl } from '../utils/stripe';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -19,6 +19,7 @@ export default function Onboarding() {
   const [emailStatus, setEmailStatus] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [cancelsAt, setCancelsAt] = useState<string | null>(null);
   const [isDisconnectingZoom, setIsDisconnectingZoom] = useState(false);
   const [isDisconnectingEmail, setIsDisconnectingEmail] = useState(false);
 
@@ -166,27 +167,21 @@ export default function Onboarding() {
         if (data && data.error) {
           console.error('Subscription check error:', data.error);
           setHasSubscription(false);
+          setCancelsAt(null);
           return;
         }
-        
-        // API can return either a single object or an array
-        if (Array.isArray(data)) {
-          const hasActiveSubscription = data.length > 0 && data.some(
-            (sub: any) => sub.subscription_status === 'active'
-          );
-          setHasSubscription(hasActiveSubscription);
-        } else if (data && typeof data === 'object') {
-          const hasActiveSubscription = data.subscription_status === 'active';
-          setHasSubscription(hasActiveSubscription);
-        } else {
-          setHasSubscription(false);
-        }
+
+        const parsed = parseSubscription(data);
+        setHasSubscription(parsed.hasSubscription);
+        setCancelsAt(parsed.cancelsAt);
       } else {
         setHasSubscription(false);
+        setCancelsAt(null);
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
       setHasSubscription(false);
+      setCancelsAt(null);
     }
   };
 
@@ -464,7 +459,7 @@ export default function Onboarding() {
             </div>
             
             {/* User Menu */}
-            <UserMenu firstName={firstName} userId={userData?.userId || ''} hasSubscription={hasSubscription} />
+            <UserMenu firstName={firstName} userId={userData?.userId || ''} hasSubscription={hasSubscription} cancelsAt={cancelsAt} />
           </div>
         </div>
       </header>

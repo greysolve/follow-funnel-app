@@ -29,6 +29,7 @@ export default function Dashboard() {
     userData,
     isLoading,
     hasSubscription,
+    cancelsAt,
     hasRequiredConnections,
     connections,
     meetings,
@@ -494,7 +495,7 @@ export default function Dashboard() {
             <span className="text-xl font-semibold">FollowFunnel</span>
           </div>
           <div className="flex items-center gap-4">
-            <UserMenu firstName={userData?.firstName || 'User'} userId={userData?.userId || ''} hasSubscription={hasSubscription} />
+            <UserMenu firstName={userData?.firstName || 'User'} userId={userData?.userId || ''} hasSubscription={hasSubscription} cancelsAt={cancelsAt} />
           </div>
         </div>
       </header>

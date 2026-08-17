@@ -15,7 +15,7 @@ export default async function handler(
 
   try {
     const response = await fetch(
-      'https://app.greysolve.com/webhook-test/cancel-stripe-subscription',
+      'https://app.greysolve.com/webhook/cancel-stripe-subscription',
       {
         method: 'POST',
         headers: {

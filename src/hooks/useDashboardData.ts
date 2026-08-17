@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { extractApiErrorMessage, extractErrorsArrayMessage, getApiErrorPayload, getRegistrantStatusPayload, isRegistrationDisabledError } from '../utils/apiError';
+import { parseSubscription } from '../utils/stripe';
 
 export function useDashboardData() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [cancelsAt, setCancelsAt] = useState<string | null>(null);
   const [hasRequiredConnections, setHasRequiredConnections] = useState(false);
   const [connections, setConnections] = useState<any[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -74,24 +76,17 @@ export function useDashboardData() {
 
       if (response.ok) {
         const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          const hasActiveSubscription = data.length > 0 && data.some(
-            (sub: any) => sub.subscription_status === 'active'
-          );
-          setHasSubscription(hasActiveSubscription);
-        } else if (data && typeof data === 'object') {
-          const hasActiveSubscription = data.subscription_status === 'active';
-          setHasSubscription(hasActiveSubscription);
-        } else {
-          setHasSubscription(false);
-        }
+        const parsed = parseSubscription(data);
+        setHasSubscription(parsed.hasSubscription);
+        setCancelsAt(parsed.cancelsAt);
       } else {
         setHasSubscription(false);
+        setCancelsAt(null);
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
       setHasSubscription(false);
+      setCancelsAt(null);
     }
   };
 
@@ -399,6 +394,7 @@ export function useDashboardData() {
     userData,
     isLoading,
     hasSubscription,
+    cancelsAt,
     hasRequiredConnections,
     connections,
     meetings,

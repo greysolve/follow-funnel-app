@@ -8,3 +8,23 @@ export function stripePaymentUrl(paymentLink: string, userId?: string | null): s
 
   return `${paymentLink}?client_reference_id=${encodeURIComponent(userId)}`;
 }
+
+export function parseSubscription(data: unknown): { hasSubscription: boolean; cancelsAt: string | null } {
+  const records = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && 'subscription_status' in data
+      ? [data]
+      : [];
+
+  const active = records.find(
+    (record: any) => record && record.subscription_status === 'active'
+  );
+
+  if (!active) {
+    return { hasSubscription: false, cancelsAt: null };
+  }
+
+  const cancelsAt = typeof active.cancels_at === 'string' && active.cancels_at ? active.cancels_at : null;
+  return { hasSubscription: true, cancelsAt };
+}
+

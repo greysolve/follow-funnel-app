@@ -7,9 +7,30 @@ interface UserMenuProps {
   firstName: string;
   userId: string;
   hasSubscription?: boolean;
+  cancelsAt?: string | null;
 }
 
-export default function UserMenu({ firstName, userId, hasSubscription = false }: UserMenuProps) {
+function formatCancelsAt(cancelsAt: string): string {
+  const date = new Date(cancelsAt);
+  if (Number.isNaN(date.getTime())) {
+    return cancelsAt;
+  }
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function isCancelScheduled(cancelsAt: string | null): boolean {
+  if (!cancelsAt) {
+    return false;
+  }
+  const date = new Date(cancelsAt);
+  return !Number.isNaN(date.getTime()) && date.getTime() > Date.now();
+}
+
+function isAlreadyCanceledSubscription(errorText: string): boolean {
+  return /no such subscription/i.test(errorText);
+}
+
+export default function UserMenu({ firstName, userId, hasSubscription = false, cancelsAt = null }: UserMenuProps) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
@@ -62,12 +83,12 @@ export default function UserMenu({ firstName, userId, hasSubscription = false }:
         }),
       });
 
-      if (response.ok) {
+      const errorText = await response.text();
+      if (response.ok || isAlreadyCanceledSubscription(errorText)) {
         window.location.reload();
         return;
       }
 
-      const errorText = await response.text();
       alert(`Failed to cancel subscription: ${errorText || response.statusText}`);
     } catch (error: any) {
       console.error('Error canceling subscription:', error);
@@ -105,7 +126,7 @@ export default function UserMenu({ firstName, userId, hasSubscription = false }:
               <Settings className="w-4 h-4" />
               Manage Connections
             </button>
-            {hasSubscription && (
+            {hasSubscription && !isCancelScheduled(cancelsAt) && (
               <button
                 onClick={async () => {
                   setIsMenuOpen(false);
@@ -121,6 +142,12 @@ export default function UserMenu({ firstName, userId, hasSubscription = false }:
                 <CreditCard className="w-4 h-4" />
                 {isCanceling ? 'Canceling...' : 'Cancel Subscription'}
               </button>
+            )}
+            {hasSubscription && isCancelScheduled(cancelsAt) && cancelsAt && (
+              <div className="px-4 py-2 text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed">
+                <CreditCard className="w-4 h-4" />
+                Cancels {formatCancelsAt(cancelsAt)}
+              </div>
             )}
             <button
               onClick={async () => {
