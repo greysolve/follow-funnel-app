@@ -50,11 +50,11 @@ export default function Features() {
         </p>
 
         <div className="relative">
-          <div className="grid md:grid-cols-2 gap-6 md:gap-12">
+          <div className="grid md:grid-cols-2 md:grid-rows-2 gap-6 md:gap-12">
             {steps.map(({ label, icon: Icon, title, body, pills, offset }) => (
               <div
                 key={label}
-                className={`bg-white border border-gray-200 rounded-xl p-6 ${offset}`}
+                className={`bg-white border border-gray-200 rounded-xl p-6 h-full ${offset}`}
               >
                 <p className="text-sm font-medium text-blue-600 mb-4">{label}</p>
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
@@ -78,11 +78,11 @@ export default function Features() {
             ))}
           </div>
 
-          <div className="mt-10 text-center md:mt-0 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:z-10">
+          <div className="mt-10 flex justify-center md:mt-0 md:absolute md:inset-0 md:items-center md:z-10 md:pointer-events-none">
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition shadow-lg"
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition shadow-lg md:pointer-events-auto"
             >
               Get Started
             </button>
