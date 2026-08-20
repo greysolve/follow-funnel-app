@@ -21,8 +21,7 @@ export default function ZoomFollowUpLanding() {
             </h1>
 
             <p className="text-xl text-gray-600 mb-8">
-              Automatically capture meeting insights, send personalized follow-ups,
-              and track engagement—all within minutes of your Zoom calls ending.
+              You mean to send it. Then the day gets away from you. FollowFunnel watches your Zoom meeting and sends the follow-up for you — from your Gmail, on the delay you choose — so the email that converts actually goes out.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
