@@ -56,10 +56,10 @@ export default function Features() {
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-blue-600" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-2 text-center">{title}</h2>
                 <p className="text-gray-600">{body}</p>
                 {pills && (
-                  <div className="flex flex-wrap gap-2 mt-4">
+                  <div className="flex flex-wrap gap-2 mt-4 justify-end">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-700" />
                       Attendees
