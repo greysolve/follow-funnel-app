@@ -1,37 +1,32 @@
 import { useNavigate } from 'react-router-dom';
-import { Clock, Link2, Mail, Plug, Users, Video } from 'lucide-react';
+import { Clock, GitBranch, Link2, Video } from 'lucide-react';
 import MarketingHeader from '../components/MarketingHeader';
 
-const features = [
+const steps = [
   {
+    label: 'STEP 01 · CAPTURE',
     icon: Video,
-    title: 'Zoom meetings and registrants',
-    body: 'Connect Zoom, pick a meeting, and load who registered. Hosts are left out of the send list.',
+    title: 'Know exactly who to follow up with',
+    body: 'Connect Zoom and pick a meeting — FollowFunnel pulls registrants and attendees for you. Hosts are left off the send list automatically.',
   },
   {
-    icon: Mail,
-    title: 'Attendee and no-show templates',
-    body: 'Write one email for people who showed up and another for people who did not. Assign both to a meeting before you send.',
+    label: 'STEP 02 · SEGMENT',
+    icon: GitBranch,
+    title: 'Treat showed-up and no-show differently',
+    body: "Write one email for the people who attended and another for the people who didn't. Assign both to a meeting before it runs.",
+    pills: true,
   },
   {
-    icon: Clock,
-    title: 'Send after the meeting, on a delay',
-    body: 'Create a sending package with how long to wait after the meeting ends. Emails go out from your Gmail, not from FollowFunnel.',
-  },
-  {
+    label: 'STEP 03 · PERSONALIZE',
     icon: Link2,
-    title: 'Template variables',
-    body: 'Insert meeting details and a recording link into the subject or body so each send stays specific without rewriting from scratch.',
+    title: 'Every send stays specific, without rewriting',
+    body: 'Drop meeting details and a recording link straight into the subject or body. Variables fill themselves in per recipient.',
   },
   {
-    icon: Plug,
-    title: 'Zoom and Gmail connections',
-    body: 'Connect or disconnect Zoom and Gmail from your account. Both need to be active before you can send.',
-  },
-  {
-    icon: Users,
-    title: 'Monthly or lifetime, cancel at period end',
-    body: 'Subscribe monthly at $45 or pay $129 once. Cancel a monthly plan and keep access until the date already paid through.',
+    label: 'STEP 04 · DELIVER',
+    icon: Clock,
+    title: 'Goes out on your delay, from your inbox',
+    body: 'Choose how long to wait after the meeting ends. Emails send from your Gmail — not from FollowFunnel — so they land like you wrote them.',
   },
 ];
 
@@ -43,23 +38,34 @@ export default function Features() {
       <MarketingHeader />
 
       <section className="max-w-5xl mx-auto px-6 py-16 lg:py-24">
-        <p className="text-sm font-medium text-blue-600 mb-4">FEATURES</p>
         <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-          What FollowFunnel actually does
+          Four parts, one flow. Set it once per meeting.
         </h1>
         <p className="text-xl text-gray-600 mb-12 max-w-3xl">
-          After a Zoom meeting, send different emails to attendees and no-shows from your Gmail —
-          on a delay you choose.
+          Each piece does one job, and they run in order — capture, split, personalize, deliver.
         </p>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {features.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="border border-gray-200 rounded-xl p-6">
+          {steps.map(({ label, icon: Icon, title, body, pills }) => (
+            <div key={label} className="border border-gray-200 rounded-xl p-6">
+              <p className="text-sm font-medium text-blue-600 mb-4">{label}</p>
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
                 <Icon className="w-5 h-5 text-blue-600" />
               </div>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
               <p className="text-gray-600">{body}</p>
+              {pills && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-700" />
+                    Attendees
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-800" />
+                    No-shows
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>
