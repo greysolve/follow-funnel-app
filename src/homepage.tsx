@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Clock, Mail, Users, Video } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Mail, Users, Video } from 'lucide-react';
 import MarketingHeader from './components/MarketingHeader';
 
 export default function ZoomFollowUpLanding() {
@@ -13,7 +13,7 @@ export default function ZoomFollowUpLanding() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="text-sm font-medium text-blue-600 mb-4">
-              ZOOM FOLLOW-UPS FROM YOUR GMAIL
+              AUTOMATE YOUR ZOOM FOLLOW-UPS
             </div>
 
             <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
@@ -21,38 +21,25 @@ export default function ZoomFollowUpLanding() {
             </h1>
 
             <p className="text-xl text-gray-600 mb-8">
-              Pick a Zoom meeting, write emails for attendees and no-shows, and send them
-              from Gmail after the call — on a delay you choose.
+              Automatically capture meeting insights, send personalized follow-ups,
+              and track engagement—all within minutes of your Zoom calls ending.
             </p>
 
-            <div id="pricing" className="flex flex-wrap gap-3 mb-8 scroll-mt-24">
-              <div className="border border-gray-200 rounded-lg px-4 py-3 min-w-[9.5rem]">
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Monthly
-                </div>
-                <div className="text-gray-900">
-                  <span className="text-2xl font-bold">$45</span>
-                  <span className="text-gray-600">/month</span>
-                </div>
-              </div>
-              <div className="border-2 border-blue-500 bg-blue-50 rounded-lg px-4 py-3 min-w-[9.5rem]">
-                <div className="text-xs font-medium uppercase tracking-wide text-blue-700">
-                  Lifetime
-                </div>
-                <div className="text-gray-900">
-                  <span className="text-2xl font-bold">$129</span>
-                  <span className="text-gray-600"> once</span>
-                </div>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                type="button"
+                onClick={() => navigate('/signup')}
+                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
+              >
+                Start here
+              </button>
+              <button
+                type="button"
+                className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-medium hover:border-gray-400 transition"
+              >
+                Watch Demo
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => navigate('/signup')}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
-            >
-              Start here
-            </button>
           </div>
 
           <div className="relative">
@@ -64,18 +51,18 @@ export default function ZoomFollowUpLanding() {
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">Sales Call - Acme Corp</div>
-                    <div className="text-sm text-gray-500">Ended • sending in 30 min</div>
+                    <div className="text-sm text-gray-500">Just ended • 45 min</div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">8 registered · 5 attended</span>
+                    <span className="text-gray-600">3 participants</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                    <span className="text-gray-600">Delay set for this meeting</span>
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-600">Action items captured</span>
                   </div>
                 </div>
               </div>
@@ -84,16 +71,37 @@ export default function ZoomFollowUpLanding() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-indigo-600" />
-                    <span className="font-semibold text-gray-900">Attendee email</span>
+                    <span className="font-semibold text-gray-900">Follow-up Email</span>
                   </div>
-                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                    Queued
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    Sent
                   </span>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-600">
-                  <div className="font-medium text-gray-900">Thanks for joining today</div>
-                  <div>Here is the recording and what we covered…</div>
+                  <div className="font-medium text-gray-900">Hi Sarah,</div>
+                  <div>Great meeting today! Here's a summary...</div>
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Calendar className="w-3 h-3" />
+                      <span>Next meeting scheduled</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="bg-white rounded-lg p-4 shadow text-center">
+                  <div className="text-2xl font-bold text-blue-600">94%</div>
+                  <div className="text-xs text-gray-600">Response Rate</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow text-center">
+                  <div className="text-2xl font-bold text-green-600">2min</div>
+                  <div className="text-xs text-gray-600">Avg Send Time</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow text-center">
+                  <div className="text-2xl font-bold text-indigo-600">500+</div>
+                  <div className="text-xs text-gray-600">Meetings/mo</div>
                 </div>
               </div>
             </div>
