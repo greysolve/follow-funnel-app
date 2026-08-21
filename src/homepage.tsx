@@ -10,14 +10,16 @@ export default function ZoomFollowUpLanding() {
       <MarketingHeader />
 
       <section className="max-w-7xl mx-auto px-6 py-20 lg:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-12 lg:gap-16 items-center">
           <div>
             <div className="text-sm font-medium text-blue-600 mb-4">
               AUTOMATE YOUR ZOOM FOLLOW-UPS
             </div>
 
             <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Never Miss a Follow-Up After Your Meetings
+              <span className="whitespace-nowrap">Never Miss a Follow-Up</span>
+              <br />
+              After Your Meetings
             </h1>
 
             <p className="text-xl text-gray-600 mb-8">
