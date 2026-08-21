@@ -52,7 +52,7 @@ export default function Features() {
                 key={label}
                 className="bg-white border border-gray-200 rounded-xl p-6 h-full"
               >
-                <p className="text-sm font-medium text-blue-600 mb-4">{label}</p>
+                <p className="text-sm font-medium text-blue-600 mb-4 text-center">{label}</p>
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-blue-600" />
                 </div>
