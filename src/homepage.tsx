@@ -17,8 +17,8 @@ export default function ZoomFollowUpLanding() {
             </div>
 
             <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              <span className="whitespace-nowrap">Never Miss a Follow-Up</span>
-              <br />
+              <span className="lg:whitespace-nowrap">Never Miss a <span className="whitespace-nowrap">Follow-Up</span></span>
+              <br className="hidden lg:block" />
               After Your Meetings
             </h1>
 
