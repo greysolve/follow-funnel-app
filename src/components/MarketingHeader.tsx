@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Video, X } from 'lucide-react';
 
+const SUGGESTION_URL = 'https://follow-funnel-for-zoom.nolt.io';
+
 export default function MarketingHeader() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,6 +52,14 @@ export default function MarketingHeader() {
           <button type="button" onClick={goToPricing} className="text-gray-600 hover:text-gray-900">
             Pricing
           </button>
+          <a
+            href={SUGGESTION_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Make a Suggestion
+          </a>
         </nav>
 
         <div className="flex items-center gap-3 sm:gap-4">
@@ -87,6 +97,14 @@ export default function MarketingHeader() {
           <button type="button" onClick={goToPricing} className="text-left text-gray-700 py-1">
             Pricing
           </button>
+          <a
+            href={SUGGESTION_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-700 py-1"
+          >
+            Make a Suggestion
+          </a>
           <button
             type="button"
             onClick={() => {
