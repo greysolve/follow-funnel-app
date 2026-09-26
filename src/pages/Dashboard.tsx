@@ -349,12 +349,6 @@ export default function Dashboard() {
         return;
       }
 
-      if (meetingOccurred === false && recipientType === 'attendees') {
-        setSaveError('This meeting has not occurred yet, so there are no attendees to send to.');
-        setIsCreatingPackage(false);
-        return;
-      }
-
       const recipientList = getCurrentRegistrantsList().map((registrant: any) => ({
         ...registrant,
       }));
@@ -604,11 +598,6 @@ export default function Dashboard() {
                 )}
                 {registrantsError && !registrationDisabled && (
                   <p className="mt-4 text-sm text-red-600">{registrantsError}</p>
-                )}
-                {selectedMeeting && meetingOccurred === false && !registrationDisabled && (
-                  <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    This meeting has not occurred yet. People listed under No Shows are registrants, not actual no-shows.
-                  </p>
                 )}
                 {selectedMeeting && meetingOccurred === true && (
                   <p className="mt-4 text-sm text-gray-600">
