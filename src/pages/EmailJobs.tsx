@@ -103,7 +103,7 @@ export default function EmailJobs() {
         )}
 
         {jobs.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-blue-600 border border-gray-200 rounded-xl overflow-hidden">
             <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_auto] gap-4 px-6 py-3 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
               <span>Meeting</span>
               <span>Audience</span>
