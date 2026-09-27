@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { extractApiErrorMessage, extractErrorsArrayMessage, getApiErrorPayload, getRegistrantStatusPayload, isRegistrationDisabledError } from '../utils/apiError';
+import { apiFetch } from '../utils/apiFetch';
 import { parseSubscription } from '../utils/stripe';
 
 export function useDashboardData() {
@@ -29,7 +30,7 @@ export function useDashboardData() {
 
   const checkConnections = async (userId: string): Promise<boolean> => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/check-connection?userId=${userId}`,
         {
           method: 'GET',
@@ -66,7 +67,7 @@ export function useDashboardData() {
 
   const checkSubscription = async (userId: string) => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/check-subscription?userId=${userId}`,
         {
           method: 'GET',
@@ -101,7 +102,7 @@ export function useDashboardData() {
 
     setIsLoadingMeetings(true);
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/zoom-meeting-list?userId=${userData.userId}&connectionId=${zoomConnection.nango_connection_id}&provider=${zoomConnection.provider}`,
         {
           method: 'GET',
@@ -127,7 +128,7 @@ export function useDashboardData() {
 
     setIsLoadingTemplates(true);
     try {
-      const response = await fetch(`/api/templates?userId=${userData.userId}`, {
+      const response = await apiFetch(`/api/templates?userId=${userData.userId}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -171,7 +172,7 @@ export function useDashboardData() {
       const guestsOnly = (person: any) => String(person?.role || '').toLowerCase() !== 'host';
       const toList = (value: unknown): any[] => (Array.isArray(value) ? value : value && typeof value === 'object' ? [value] : []);
 
-      const registrantsResponse = await fetch(`/api/zoom-meeting-registrant-status?${query}`, {
+      const registrantsResponse = await apiFetch(`/api/zoom-meeting-registrant-status?${query}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -210,7 +211,7 @@ export function useDashboardData() {
       setAllRegistrantsForPreview(registrants);
 
       // A participants error means the meeting has not happened yet.
-      const participantsResponse = await fetch(`/api/zoom-meeting-participant-status?${query}`, {
+      const participantsResponse = await apiFetch(`/api/zoom-meeting-participant-status?${query}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -241,7 +242,7 @@ export function useDashboardData() {
       setAttendeesList(attendees.filter(guestsOnly));
       setMeetingOccurred(true);
 
-      const noShowsResponse = await fetch(`/api/zoom-meeting-noshows?${query}`, {
+      const noShowsResponse = await apiFetch(`/api/zoom-meeting-noshows?${query}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -274,7 +275,7 @@ export function useDashboardData() {
     }
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/zoom-meeting-recordings?meetingId=${selectedMeeting}`,
         {
           method: 'GET',
@@ -328,7 +329,7 @@ export function useDashboardData() {
     if (!selectedMeeting || !userId) return null;
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/meeting-assignments/${selectedMeeting}?userId=${userId}`,
         {
           method: 'GET',

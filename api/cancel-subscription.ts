@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserId } from './_requireUser.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -8,10 +9,8 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const userId = req.body?.user_id;
-  if (!userId) {
-    return res.status(400).json({ error: 'user_id is required' });
-  }
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
 
   try {
     const response = await fetch(
@@ -22,7 +21,7 @@ export default async function handler(
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.APP_API ?? ''}`,
         },
-        body: JSON.stringify(req.body),
+        body: JSON.stringify({ ...req.body, user_id: userId }),
       }
     );
 

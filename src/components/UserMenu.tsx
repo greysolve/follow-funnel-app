@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Settings, Trash2, LogOut, CreditCard } from 'lucide-react';
+import { ChevronDown, Settings, Trash2, LogOut, CreditCard, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { apiFetch } from '../utils/apiFetch';
 
 interface UserMenuProps {
   firstName: string;
@@ -42,7 +43,7 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
     }
 
     try {
-      const response = await fetch('/api/delete-user', {
+      const response = await apiFetch('/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,7 +76,7 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
 
     setIsCanceling(true);
     try {
-      const response = await fetch('/api/cancel-subscription', {
+      const response = await apiFetch('/api/cancel-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,6 +126,16 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
             >
               <Settings className="w-4 h-4" />
               Manage Connections
+            </button>
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate('/email-jobs');
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              Manage Email Jobs
             </button>
             {hasSubscription && !isCancelScheduled(cancelsAt) && (
               <button

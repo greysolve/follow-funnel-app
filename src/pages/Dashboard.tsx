@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, Eye } from 'lucide-react';
 import UserMenu from '../components/UserMenu';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -16,6 +17,7 @@ import {
   stripColorStyles,
 } from '../utils/templateUtils';
 import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
+import { apiFetch } from '../utils/apiFetch';
 import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, stripePaymentUrl } from '../utils/stripe';
 import StripePlanButton from '../components/StripePlanButton';
 
@@ -38,6 +40,7 @@ export default function Dashboard() {
     attendeesList,
     noShowsList,
     allRegistrantsForPreview,
+    isLoadingRegistrants,
     registrantsError,
     registrationDisabled,
     meetingOccurred,
@@ -201,7 +204,7 @@ export default function Dashboard() {
 
         console.log('Updating template:', updatedTemplate);
 
-        const updateResponse = await fetch(
+        const updateResponse = await apiFetch(
           `/api/templates?userId=${userData.userId}&templateId=${templateId}`,
           {
             method: 'PUT',
@@ -234,7 +237,7 @@ export default function Dashboard() {
 
         console.log('Creating new template:', newTemplate);
 
-        const createResponse = await fetch(`/api/templates`, {
+        const createResponse = await apiFetch(`/api/templates`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newTemplate),
@@ -274,7 +277,7 @@ export default function Dashboard() {
         template_type: templateType,
       });
 
-      const assignmentResponse = await fetch(
+      const assignmentResponse = await apiFetch(
         `/api/meeting-assignments?userId=${userData.userId}&meetingId=${selectedMeeting}&templateType=${templateType}`,
         {
           method: 'PUT',
@@ -370,7 +373,7 @@ export default function Dashboard() {
       console.log('Creating sending package - URL:', url);
       console.log('Creating sending package - Payload:', payload);
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -489,6 +492,12 @@ export default function Dashboard() {
             <span className="text-xl font-semibold">FollowFunnel</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              to="/email-jobs"
+              className="px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition"
+            >
+              Manage email jobs
+            </Link>
             <UserMenu firstName={userData?.firstName || 'User'} userId={userData?.userId || ''} hasSubscription={hasSubscription} cancelsAt={cancelsAt} />
           </div>
         </div>
@@ -599,7 +608,7 @@ export default function Dashboard() {
                 {registrantsError && !registrationDisabled && (
                   <p className="mt-4 text-sm text-red-600">{registrantsError}</p>
                 )}
-                {selectedMeeting && meetingOccurred === true && (
+                {selectedMeeting && meetingOccurred === true && !isLoadingRegistrants && (
                   <p className="mt-4 text-sm text-gray-600">
                     Meeting has occurred. {attendeesList.length} guest attendee{attendeesList.length === 1 ? '' : 's'}, {noShowsList.length} no-show{noShowsList.length === 1 ? '' : 's'}.
                   </p>
