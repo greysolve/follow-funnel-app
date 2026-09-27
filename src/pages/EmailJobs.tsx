@@ -30,7 +30,7 @@ const statusClasses = (status: string) => {
   switch (status) {
     case 'sent':
       return 'bg-green-100 text-green-800';
-    case 'failed':
+    case 'errored':
       return 'bg-red-100 text-red-800';
     case 'pending':
       return 'bg-blue-100 text-blue-800';
@@ -45,6 +45,37 @@ export default function EmailJobs() {
   const [jobs, setJobs] = useState<EmailJob[]>([]);
   const [error, setError] = useState('');
   const [selectedJob, setSelectedJob] = useState<EmailJob | null>(null);
+  const [userId, setUserId] = useState('');
+  const [busyJobId, setBusyJobId] = useState('');
+
+  const updateJobStatus = async (job: EmailJob, action: 'pause' | 'cancel' | 'delete') => {
+    setBusyJobId(job.id);
+    setError('');
+    try {
+      const response = await fetch('/api/job-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: job.id, userId, action }),
+      });
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      if (action === 'delete') {
+        setJobs((current) => current.filter((j) => j.id !== job.id));
+        setSelectedJob(null);
+        return;
+      }
+
+      const send_status = action === 'pause' ? 'stopped' : 'canceled';
+      setJobs((current) => current.map((j) => (j.id === job.id ? { ...j, send_status } : j)));
+      setSelectedJob((current) => (current?.id === job.id ? { ...current, send_status } : current));
+    } catch {
+      setError(`Failed to ${action} the job.`);
+    } finally {
+      setBusyJobId('');
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -53,6 +84,7 @@ export default function EmailJobs() {
         navigate('/login');
         return;
       }
+      setUserId(session.user.id);
 
       try {
         const response = await fetch(`/api/email-jobs?userId=${session.user.id}`, {
@@ -133,11 +165,19 @@ export default function EmailJobs() {
                     <Pencil className="w-4 h-4" />
                     Edit
                   </button>
-                  <button className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+                  <button
+                    onClick={() => updateJobStatus(job, 'cancel')}
+                    disabled={busyJobId === job.id}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <XCircle className="w-4 h-4" />
                     Cancel
                   </button>
-                  <button className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+                  <button
+                    onClick={() => updateJobStatus(job, 'pause')}
+                    disabled={busyJobId === job.id || job.send_status === 'stopped'}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <Pause className="w-4 h-4" />
                     Pause
                   </button>
@@ -215,7 +255,11 @@ export default function EmailJobs() {
             </div>
 
             <div className="p-6 border-t border-gray-200">
-              <button className="w-full py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+              <button
+                onClick={() => updateJobStatus(selectedJob, 'delete')}
+                disabled={busyJobId === selectedJob.id}
+                className="w-full py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Delete Job
               </button>
             </div>
