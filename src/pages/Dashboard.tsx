@@ -72,7 +72,13 @@ export default function Dashboard() {
   } = templateEditor;
 
   // Local state for UI interactions
-  const [selectedMeeting, setSelectedMeeting] = useState<string>('');
+  const [selectedMeeting, setSelectedMeeting] = useState<string>(() => {
+    try {
+      return localStorage.getItem('followfunnel.selectedMeeting') || '';
+    } catch {
+      return '';
+    }
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [saveError, setSaveError] = useState<string>('');
@@ -398,7 +404,29 @@ export default function Dashboard() {
 
   const handleMeetingChange = (meetingId: string) => {
     setSelectedMeeting(meetingId);
+    try {
+      if (meetingId) {
+        localStorage.setItem('followfunnel.selectedMeeting', meetingId);
+      } else {
+        localStorage.removeItem('followfunnel.selectedMeeting');
+      }
+    } catch {
+      // ignore storage errors
+    }
   };
+
+  useEffect(() => {
+    if (isLoadingMeetings || meetings.length === 0 || !selectedMeeting) {
+      return;
+    }
+    const exists = meetings.some((meeting: any) => {
+      const meetingId = String(meeting.id ?? meeting.uuid ?? '');
+      return meetingId === selectedMeeting;
+    });
+    if (!exists) {
+      handleMeetingChange('');
+    }
+  }, [meetings, isLoadingMeetings, selectedMeeting]);
 
   const handleMeetingRefresh = () => {
     fetchMeetings();
@@ -440,16 +468,23 @@ export default function Dashboard() {
   // Load template when assignment is found and templates are available
   useEffect(() => {
     const assignmentData = dashboardData.assignment;
-    if (assignmentData && assignmentData.template_id && templates.length > 0) {
-      const templateType = assignmentData.template_type;
-      const tab = templateType === 'attendees' ? 'attendees' : 'noShows';
-      setSelectedTemplateId(assignmentData.template_id, tab);
-      
-      const template = templates.find((t: any) => t.id === assignmentData.template_id);
+    const rows = Array.isArray(assignmentData)
+      ? assignmentData
+      : assignmentData
+        ? [assignmentData]
+        : [];
+
+    rows.forEach((row: any) => {
+      if (!row?.template_id || templates.length === 0) {
+        return;
+      }
+      const tab = row.template_type === 'attendees' ? 'attendees' : 'noShows';
+      setSelectedTemplateId(row.template_id, tab);
+      const template = templates.find((t: any) => t.id === row.template_id);
       if (template) {
         loadTemplateForTab(template, tab);
       }
-    }
+    });
   }, [dashboardData.assignment, templates]);
 
   // Load template content when tab changes (only if no content exists)
@@ -757,6 +792,7 @@ export default function Dashboard() {
                     </div>
                   ) : (
                   <EmailEditor
+                    key={`${activeTab}-${getSelectedTemplateId()}`}
                     ref={emailEditorRef}
                     subject={getEmailSubject()}
                     body={getCurrentEmailContent()}

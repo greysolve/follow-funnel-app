@@ -339,13 +339,15 @@ export function useDashboardData() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data && data.template_id) {
-          setAssignment(data);
-          return data;
-        } else {
-          setAssignment(null);
-          return null;
+        const rows = Array.isArray(data) ? data : data ? [data] : [];
+        const withTemplate = rows.filter((row: any) => row?.template_id);
+        if (withTemplate.length > 0) {
+          const assignmentData = withTemplate.length === 1 ? withTemplate[0] : withTemplate;
+          setAssignment(assignmentData);
+          return assignmentData;
         }
+        setAssignment(null);
+        return null;
       }
       return null;
     } catch (error) {
