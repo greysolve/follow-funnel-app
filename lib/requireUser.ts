@@ -1,5 +1,37 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+
+function base64UrlToBuffer(value: string): Buffer {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/');
+  return Buffer.from(padded, 'base64');
+}
+
+function userIdFromToken(token: string, secret: string): string | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const [header, payload, signature] = parts;
+  const expected = createHmac('sha256', secret).update(`${header}.${payload}`).digest();
+  const actual = base64UrlToBuffer(signature);
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+    return null;
+  }
+
+  let data: { sub?: unknown; exp?: unknown };
+  try {
+    data = JSON.parse(base64UrlToBuffer(payload).toString('utf8'));
+  } catch {
+    return null;
+  }
+
+  if (typeof data.exp === 'number' && data.exp * 1000 <= Date.now()) {
+    return null;
+  }
+
+  return typeof data.sub === 'string' && data.sub ? data.sub : null;
+}
 
 export async function requireUserId(
   req: VercelRequest,
@@ -15,19 +47,17 @@ export async function requireUserId(
     return null;
   }
 
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!url || !key) {
+  const secret = process.env.SUPABASE_JWT_SECRET;
+  if (!secret) {
     res.status(500).json({ error: 'Server auth is not configured' });
     return null;
   }
 
-  const supabase = createClient(url, key);
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) {
+  const userId = userIdFromToken(token, secret);
+  if (!userId) {
     res.status(401).json({ error: 'Unauthorized' });
     return null;
   }
 
-  return user.id;
+  return userId;
 }
