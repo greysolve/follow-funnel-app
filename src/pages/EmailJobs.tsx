@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Pause, Pencil, Video, X, XCircle } from 'lucide-react';
+import { Loader2, Pause, Video, X, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -149,7 +149,7 @@ export default function EmailJobs() {
               <span>Recipients</span>
               <span>Scheduled send</span>
               <span>Status</span>
-              <span className="w-[228px]" />
+              <span className="w-[156px]" />
             </div>
 
             {jobs.map((job) => (
@@ -168,10 +168,6 @@ export default function EmailJobs() {
                   </span>
                 </span>
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <button className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
-                    <Pencil className="w-4 h-4" />
-                    Edit
-                  </button>
                   <button
                     onClick={() => updateJobStatus(job, 'cancel')}
                     disabled={busyJobId === job.id}
