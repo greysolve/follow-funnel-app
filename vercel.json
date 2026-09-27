@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/((?!api).*)",
+      "source": "/(features|signup|login|onboarding|dashboard|privacy|terms|zoom-documentation|email-jobs)/?",
       "destination": "/index.html"
     }
   ],
