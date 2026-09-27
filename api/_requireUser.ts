@@ -1,9 +1,9 @@
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 function base64UrlToBuffer(value: string): Buffer {
-  const padded = value.replace(/-/g, '+').replace(/_/g, '/');
-  return Buffer.from(padded, 'base64');
+  const pad = value.length % 4 === 0 ? '' : '='.repeat(4 - (value.length % 4));
+  return Buffer.from(value.replace(/-/g, '+').replace(/_/g, '/') + pad, 'base64');
 }
 
 function userIdFromToken(token: string, secret: string): string | null {
@@ -37,27 +37,32 @@ export async function requireUserId(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<string | null> {
-  const header = req.headers.authorization;
-  const token = typeof header === 'string' && header.startsWith('Bearer ')
-    ? header.slice(7)
-    : '';
+  try {
+    const header = req.headers.authorization;
+    const token = typeof header === 'string' && header.startsWith('Bearer ')
+      ? header.slice(7)
+      : '';
 
-  if (!token) {
+    if (!token) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return null;
+    }
+
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+      res.status(500).json({ error: 'Server auth is not configured' });
+      return null;
+    }
+
+    const userId = userIdFromToken(token, secret);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return null;
+    }
+
+    return userId;
+  } catch {
     res.status(401).json({ error: 'Unauthorized' });
     return null;
   }
-
-  const secret = process.env.SUPABASE_JWT_SECRET;
-  if (!secret) {
-    res.status(500).json({ error: 'Server auth is not configured' });
-    return null;
-  }
-
-  const userId = userIdFromToken(token, secret);
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return null;
-  }
-
-  return userId;
 }
