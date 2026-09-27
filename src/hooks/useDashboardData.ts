@@ -167,88 +167,94 @@ export function useDashboardData() {
     setRegistrantsError('');
     setRegistrationDisabled(false);
     try {
-      const response = await fetch(
-        `/api/zoom-meeting-registrant-status?connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const query = `connectionId=${zoomConnection.nango_connection_id}&meetingId=${selectedMeeting}`;
+      const guestsOnly = (person: any) => String(person?.role || '').toLowerCase() !== 'host';
+      const toList = (value: unknown): any[] => (Array.isArray(value) ? value : value && typeof value === 'object' ? [value] : []);
 
-      const data = await response.json();
-      const responseData = getRegistrantStatusPayload(data);
-      const errorsMessage = extractErrorsArrayMessage(responseData?.errors);
-      const isExplicitError = Boolean(getApiErrorPayload(data));
-      const status = responseData?.status;
-      const registrationOff = isRegistrationDisabledError(data, errorsMessage);
+      const registrantsResponse = await fetch(`/api/zoom-meeting-registrant-status?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const registrantsData = await registrantsResponse.json();
+      const registrantsPayload = getRegistrantStatusPayload(registrantsData);
+      const registrantsErrorsMessage = extractErrorsArrayMessage(registrantsPayload?.errors);
 
-      if (registrationOff) {
+      if (isRegistrationDisabledError(registrantsData, registrantsErrorsMessage)) {
         setAttendeesList([]);
         setNoShowsList([]);
         setAllRegistrantsForPreview([]);
-        setMeetingOccurred(typeof responseData?.meeting_occurred === 'boolean' ? responseData.meeting_occurred : false);
+        setMeetingOccurred(null);
         setRegistrationDisabled(true);
         setRegistrantsError('');
         return;
       }
 
-      if (isExplicitError) {
-        const message = extractApiErrorMessage(data, 'Failed to load registrants for this meeting.');
+      const registrantsStatus = registrantsPayload?.status;
+      if (
+        getApiErrorPayload(registrantsData) ||
+        !registrantsResponse.ok ||
+        (registrantsStatus && registrantsStatus !== 'ok') ||
+        registrantsErrorsMessage
+      ) {
         setAttendeesList([]);
         setNoShowsList([]);
         setAllRegistrantsForPreview([]);
         setMeetingOccurred(null);
-        setRegistrationDisabled(isRegistrationDisabledError(data, message));
-        setRegistrantsError(message);
+        setRegistrantsError(
+          extractApiErrorMessage(registrantsData, registrantsErrorsMessage || 'Failed to load registrants for this meeting.')
+        );
         return;
       }
 
-      if (status === 'meeting_not_held') {
-        const message = errorsMessage || 'Could not load participants for this meeting.';
+      const registrants = toList(registrantsPayload?.registrants).filter(guestsOnly);
+      setAllRegistrantsForPreview(registrants);
+
+      // A participants error means the meeting has not happened yet.
+      const participantsResponse = await fetch(`/api/zoom-meeting-participant-status?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const participantsData = await participantsResponse.json();
+      const participantsPayload = getRegistrantStatusPayload(participantsData);
+      const participantsStatus = participantsPayload?.status;
+
+      if (
+        getApiErrorPayload(participantsData) ||
+        !participantsResponse.ok ||
+        (participantsStatus && participantsStatus !== 'ok') ||
+        extractErrorsArrayMessage(participantsPayload?.errors)
+      ) {
         setAttendeesList([]);
         setNoShowsList([]);
-        setAllRegistrantsForPreview([]);
         setMeetingOccurred(false);
-        setRegistrationDisabled(isRegistrationDisabledError(data, message));
-        setRegistrantsError(message);
         return;
       }
 
-      if ((status && status !== 'ok') || !response.ok) {
-        const message = extractApiErrorMessage(data, errorsMessage || 'Failed to load registrants for this meeting.');
-        setAttendeesList([]);
-        setNoShowsList([]);
-        setAllRegistrantsForPreview([]);
-        setMeetingOccurred(typeof responseData?.meeting_occurred === 'boolean' ? responseData.meeting_occurred : null);
-        setRegistrationDisabled(isRegistrationDisabledError(data, message));
-        setRegistrantsError(message);
-        return;
-      }
-
-      let attendees: any[] = [];
-      let noShows: any[] = [];
-
-      if (responseData?.attendees && Array.isArray(responseData.attendees)) {
-        attendees = responseData.attendees.map((attendee: any) => {
-          const nameParts = (attendee.name || '').trim().split(/\s+/);
-          return {
-            ...attendee,
-            first_name: attendee.first_name || nameParts[0] || '',
-            last_name: attendee.last_name || nameParts.slice(1).join(' ') || '',
-          };
-        });
-      }
-
-      if (responseData?.no_shows && Array.isArray(responseData.no_shows)) {
-        noShows = responseData.no_shows;
-      }
-
-      const guestsOnly = (person: any) => String(person?.role || '').toLowerCase() !== 'host';
-      setMeetingOccurred(typeof responseData?.meeting_occurred === 'boolean' ? responseData.meeting_occurred : null);
-      setRegistrationDisabled(false);
+      const attendees = toList(participantsPayload?.attendees).map((attendee: any) => {
+        const nameParts = (attendee.name || '').trim().split(/\s+/);
+        return {
+          ...attendee,
+          first_name: attendee.first_name || nameParts[0] || '',
+          last_name: attendee.last_name || nameParts.slice(1).join(' ') || '',
+        };
+      });
       setAttendeesList(attendees.filter(guestsOnly));
-      setNoShowsList(noShows.filter(guestsOnly));
-      setAllRegistrantsForPreview([...attendees, ...noShows].filter(guestsOnly));
+      setMeetingOccurred(true);
+
+      const noShowsResponse = await fetch(`/api/zoom-meeting-noshows?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const noShowsData = await noShowsResponse.json();
+      const noShowsPayload = getRegistrantStatusPayload(noShowsData);
+
+      if (getApiErrorPayload(noShowsData) || !noShowsResponse.ok) {
+        setNoShowsList([]);
+        setRegistrantsError(extractApiErrorMessage(noShowsData, 'Failed to load no-shows for this meeting.'));
+        return;
+      }
+
+      setNoShowsList(toList(noShowsPayload?.no_shows).filter(guestsOnly));
     } catch (error) {
       console.error('Error fetching registrant status:', error);
       setAttendeesList([]);
