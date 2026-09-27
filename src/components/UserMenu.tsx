@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Settings, Trash2, LogOut, CreditCard, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { apiFetch } from '../utils/apiFetch';
 
 interface UserMenuProps {
   firstName: string;
@@ -42,7 +43,7 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
     }
 
     try {
-      const response = await fetch('/api/delete-user', {
+      const response = await apiFetch('/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,7 +76,7 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
 
     setIsCanceling(true);
     try {
-      const response = await fetch('/api/cancel-subscription', {
+      const response = await apiFetch('/api/cancel-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

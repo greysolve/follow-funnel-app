@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserId } from '../lib/requireUser';
 
 export default async function handler(
   req: VercelRequest,
@@ -7,6 +8,8 @@ export default async function handler(
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  if (!(await requireUserId(req, res))) return;
 
   const { connectionId, meetingId } = req.query;
 

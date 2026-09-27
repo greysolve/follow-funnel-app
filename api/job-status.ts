@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserId } from '../lib/requireUser';
 
 export default async function handler(
   req: VercelRequest,
@@ -8,10 +9,13 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { jobId, userId, action } = req.body ?? {};
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
 
-  if (!jobId || !userId || !action) {
-    return res.status(400).json({ error: 'jobId, userId, and action are required' });
+  const { jobId, action } = req.body ?? {};
+
+  if (!jobId || !action) {
+    return res.status(400).json({ error: 'jobId and action are required' });
   }
 
   try {

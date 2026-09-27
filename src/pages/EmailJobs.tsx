@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Pause, Pencil, Video, X, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { apiFetch } from '../utils/apiFetch';
 
 interface EmailJob {
   id: string;
@@ -52,7 +53,7 @@ export default function EmailJobs() {
     setBusyJobId(job.id);
     setError('');
     try {
-      const response = await fetch('/api/job-status', {
+      const response = await apiFetch('/api/job-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId: job.id, userId, action }),
@@ -87,7 +88,7 @@ export default function EmailJobs() {
       setUserId(session.user.id);
 
       try {
-        const response = await fetch(`/api/email-jobs?userId=${session.user.id}`, {
+        const response = await apiFetch(`/api/email-jobs?userId=${session.user.id}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });

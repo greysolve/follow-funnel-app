@@ -1,10 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserId } from '../lib/requireUser';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  const { userId, template_type, templateId } = req.query;
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { template_type, templateId } = req.query;
   const method = req.method;
 
   let url = 'https://app.greysolve.com/webhook/templates';
@@ -26,7 +30,9 @@ export default async function handler(
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.APP_API ?? ''}`,
       },
-      body: (method === 'POST' || method === 'PUT') ? JSON.stringify(req.body) : undefined,
+      body: (method === 'POST' || method === 'PUT')
+        ? JSON.stringify({ ...req.body, user_id: userId })
+        : undefined,
     });
 
     const data = await response.json();

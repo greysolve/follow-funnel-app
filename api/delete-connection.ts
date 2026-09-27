@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserId } from '../lib/requireUser';
 
 export default async function handler(
   req: VercelRequest,
@@ -8,10 +9,13 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, provider } = req.query;
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
 
-  if (!userId || !provider) {
-    return res.status(400).json({ error: 'userId and provider are required' });
+  const { provider } = req.query;
+
+  if (!provider) {
+    return res.status(400).json({ error: 'provider is required' });
   }
 
   try {

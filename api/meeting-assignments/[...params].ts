@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserId } from '../../lib/requireUser';
 
 export default async function handler(
   req: VercelRequest,
@@ -16,12 +17,10 @@ export default async function handler(
     return res.status(400).json({ error: 'meetingId is required in path' });
   }
 
-  const meetingId = paramsArray[0];
-  const { userId } = req.query;
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
 
-  if (!userId) {
-    return res.status(400).json({ error: 'userId is required' });
-  }
+  const meetingId = paramsArray[0];
 
   try {
     const url = `https://app.greysolve.com/webhook/meeting-assignments/${meetingId}?userId=${userId}`;

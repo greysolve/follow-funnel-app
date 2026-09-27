@@ -17,6 +17,7 @@ import {
   stripColorStyles,
 } from '../utils/templateUtils';
 import { extractApiErrorMessage, getApiErrorPayload } from '../utils/apiError';
+import { apiFetch } from '../utils/apiFetch';
 import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, stripePaymentUrl } from '../utils/stripe';
 import StripePlanButton from '../components/StripePlanButton';
 
@@ -203,7 +204,7 @@ export default function Dashboard() {
 
         console.log('Updating template:', updatedTemplate);
 
-        const updateResponse = await fetch(
+        const updateResponse = await apiFetch(
           `/api/templates?userId=${userData.userId}&templateId=${templateId}`,
           {
             method: 'PUT',
@@ -236,7 +237,7 @@ export default function Dashboard() {
 
         console.log('Creating new template:', newTemplate);
 
-        const createResponse = await fetch(`/api/templates`, {
+        const createResponse = await apiFetch(`/api/templates`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newTemplate),
@@ -276,7 +277,7 @@ export default function Dashboard() {
         template_type: templateType,
       });
 
-      const assignmentResponse = await fetch(
+      const assignmentResponse = await apiFetch(
         `/api/meeting-assignments?userId=${userData.userId}&meetingId=${selectedMeeting}&templateType=${templateType}`,
         {
           method: 'PUT',
@@ -372,7 +373,7 @@ export default function Dashboard() {
       console.log('Creating sending package - URL:', url);
       console.log('Creating sending package - Payload:', payload);
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

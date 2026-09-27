@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import UserMenu from '../components/UserMenu';
 import StripePlanButton from '../components/StripePlanButton';
 import { STRIPE_LIFETIME_LINK, STRIPE_MONTHLY_LINK, parseSubscription, stripePaymentUrl } from '../utils/stripe';
+import { apiFetch } from '../utils/apiFetch';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -102,7 +103,7 @@ export default function Onboarding() {
     try {
       const url = `/api/check-connection?userId=${userData.userId}`;
       console.log('Fetching connections from:', url);
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -152,7 +153,7 @@ export default function Onboarding() {
     if (!userData?.userId) return;
     
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/check-subscription?userId=${userData.userId}`,
         {
           method: 'GET',
@@ -210,7 +211,7 @@ export default function Onboarding() {
       };
       console.log('Connecting Zoom with:', requestBody);
 
-      const response = await fetch('/api/create-zoom-auth', {
+      const response = await apiFetch('/api/create-zoom-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -306,7 +307,7 @@ export default function Onboarding() {
       };
       console.log('Connecting Gmail with:', requestBody);
 
-      const response = await fetch('/api/create-gmail-auth', {
+      const response = await apiFetch('/api/create-gmail-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -373,7 +374,7 @@ export default function Onboarding() {
     setZoomError('');
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/delete-connection?userId=${userData.userId}&provider=zoom`,
         {
           method: 'DELETE',
@@ -409,7 +410,7 @@ export default function Onboarding() {
     setEmailError('');
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/delete-connection?userId=${userData.userId}&provider=google-mail`,
         {
           method: 'DELETE',
