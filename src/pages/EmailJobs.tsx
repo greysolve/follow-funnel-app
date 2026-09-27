@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Pause, Pencil, Trash2, Video, X } from 'lucide-react';
+import { Loader2, Pause, Pencil, Video, X, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface EmailJob {
@@ -103,7 +103,7 @@ export default function EmailJobs() {
         )}
 
         {jobs.length > 0 && (
-          <div className="bg-blue-600 border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_auto] gap-4 px-6 py-3 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
               <span>Meeting</span>
               <span>Audience</span>
@@ -134,8 +134,8 @@ export default function EmailJobs() {
                     Edit
                   </button>
                   <button className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
-                    <Trash2 className="w-4 h-4" />
-                    Delete
+                    <XCircle className="w-4 h-4" />
+                    Cancel
                   </button>
                   <button className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
                     <Pause className="w-4 h-4" />
@@ -216,7 +216,7 @@ export default function EmailJobs() {
 
             <div className="p-6 border-t border-gray-200">
               <button className="w-full py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
-                Cancel Job
+                Delete Job
               </button>
             </div>
           </div>
