@@ -30,6 +30,7 @@ export default async function handler(
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.APP_API ?? ''}`,
       },
     });
 
