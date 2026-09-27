@@ -24,6 +24,7 @@ export default async function handler(
       method: method,
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.APP_API ?? ''}`,
       },
       body: (method === 'POST' || method === 'PUT') ? JSON.stringify(req.body) : undefined,
     });
