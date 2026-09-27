@@ -38,6 +38,7 @@ export default function Dashboard() {
     attendeesList,
     noShowsList,
     allRegistrantsForPreview,
+    isLoadingRegistrants,
     registrantsError,
     registrationDisabled,
     meetingOccurred,
@@ -599,7 +600,7 @@ export default function Dashboard() {
                 {registrantsError && !registrationDisabled && (
                   <p className="mt-4 text-sm text-red-600">{registrantsError}</p>
                 )}
-                {selectedMeeting && meetingOccurred === true && (
+                {selectedMeeting && meetingOccurred === true && !isLoadingRegistrants && (
                   <p className="mt-4 text-sm text-gray-600">
                     Meeting has occurred. {attendeesList.length} guest attendee{attendeesList.length === 1 ? '' : 's'}, {noShowsList.length} no-show{noShowsList.length === 1 ? '' : 's'}.
                   </p>
