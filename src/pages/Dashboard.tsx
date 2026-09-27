@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Video, CreditCard, CheckCircle, Loader2, Users, UserX, Eye } from 'lucide-react';
 import UserMenu from '../components/UserMenu';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -490,6 +491,12 @@ export default function Dashboard() {
             <span className="text-xl font-semibold">FollowFunnel</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              to="/email-jobs"
+              className="px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition"
+            >
+              Manage email jobs
+            </Link>
             <UserMenu firstName={userData?.firstName || 'User'} userId={userData?.userId || ''} hasSubscription={hasSubscription} cancelsAt={cancelsAt} />
           </div>
         </div>

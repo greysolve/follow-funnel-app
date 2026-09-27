@@ -128,6 +128,12 @@ export default function EmailJobs() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Email Jobs</h1>
 
+        {jobs.some((job) => job.send_status === 'errored' || (job.send_status === 'pending' && toRecipients(job.recipient_list).length === 0)) && (
+          <div className="mb-6 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            One or more jobs need attention. A job errored, or it is still pending with no recipients.
+          </div>
+        )}
+
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
         {!error && jobs.length === 0 && (

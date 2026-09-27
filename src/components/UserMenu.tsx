@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Settings, Trash2, LogOut, CreditCard } from 'lucide-react';
+import { ChevronDown, Settings, Trash2, LogOut, CreditCard, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface UserMenuProps {
@@ -125,6 +125,16 @@ export default function UserMenu({ firstName, userId, hasSubscription = false, c
             >
               <Settings className="w-4 h-4" />
               Manage Connections
+            </button>
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate('/email-jobs');
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              Manage Email Jobs
             </button>
             {hasSubscription && !isCancelScheduled(cancelsAt) && (
               <button
