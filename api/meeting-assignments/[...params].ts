@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireUserId } from '../_requireUser';
+import { requireUserId } from '../_requireUser.js';
 
 export default async function handler(
   req: VercelRequest,
