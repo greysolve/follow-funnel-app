@@ -108,6 +108,13 @@ export default function Features() {
               >
                 Terms of Service
               </button>
+              <button
+                type="button"
+                onClick={() => navigate('/dpa')}
+                className="hover:text-gray-900 transition"
+              >
+                DPA
+              </button>
             </div>
           </div>
         </div>

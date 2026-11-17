@@ -8,6 +8,7 @@ import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import Dpa from './pages/Dpa'
 import ZoomDocumentation from './pages/ZoomDocumentation'
 import Features from './pages/Features'
 import EmailJobs from './pages/EmailJobs'
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/email-jobs" element={<EmailJobs />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/dpa" element={<Dpa />} />
         <Route path="/zoom-documentation" element={<ZoomDocumentation />} />
       </Routes>
     </BrowserRouter>

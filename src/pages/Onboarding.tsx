@@ -657,7 +657,7 @@ export default function Onboarding() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Lifetime</h3>
                 <div className="mb-4">
-                  <span className="text-3xl font-bold text-gray-900">$129</span>
+                  <span className="text-3xl font-bold text-gray-900">$79</span>
                   <span className="text-gray-600"> one-time</span>
                 </div>
                 <ul className="space-y-2 mb-6">
