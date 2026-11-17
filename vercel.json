@@ -9,6 +9,7 @@
     { "source": "/dashboard", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/terms", "destination": "/index.html" },
+    { "source": "/dpa", "destination": "/index.html" },
     { "source": "/zoom-documentation", "destination": "/index.html" },
     { "source": "/email-jobs", "destination": "/index.html" }
   ],
